@@ -1,0 +1,3 @@
+[submodule "submodules/dotnet-task-completion-management"]
+	path = submodules/dotnet-task-completion-management
+	url = ../dotnet-task-completion-management
