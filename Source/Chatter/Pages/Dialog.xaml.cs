@@ -4,7 +4,7 @@ using Mikodev.Links;
 using Mikodev.Links.Messages;
 using Mikodev.Optional;
 using System;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -19,7 +19,7 @@ namespace Chatter.Pages
     {
         private LinkProfile profile;
 
-        private BindingList<Message> messageCollection;
+        private ObservableCollection<Message> messages;
 
         private ScrollViewer scrollViewer;
 
@@ -41,9 +41,9 @@ namespace Chatter.Pages
 
             scrollViewer = listbox.FindChild<ScrollViewer>(string.Empty);
             Debug.Assert(scrollViewer != null);
-            messageCollection = profile.MessageCollection;
-            messageCollection.ListChanged += BindingList_ListChanged;
-            listbox.ItemsSource = messageCollection;
+            messages = profile.MessageCollection;
+            messages.CollectionChanged += ObservableCollection_CollectionChanged;
+            listbox.ItemsSource = messages;
             scrollViewer.ScrollToBottom();
         }
 
@@ -51,7 +51,7 @@ namespace Chatter.Pages
         {
             listbox.ItemsSource = null;
             App.TextBoxKeyDown -= TextBox_KeyDown;
-            messageCollection.ListChanged -= BindingList_ListChanged;
+            messages.CollectionChanged -= ObservableCollection_CollectionChanged;
         }
 
         private void SendText()
@@ -75,7 +75,7 @@ namespace Chatter.Pages
             e.Handled = true;
         }
 
-        private void BindingList_ListChanged(object sender, ListChangedEventArgs e)
+        private void ObservableCollection_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             scrollViewer.ScrollToBottom();
         }

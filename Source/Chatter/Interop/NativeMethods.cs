@@ -41,7 +41,7 @@ namespace Chatter.Interop
             const int AccentPolicy = 19;
             const int AccentEnableBlurBehind = 3;
             const int BlurOpacity = 0x00;
-            const int BlurBackground = 0xFE01FE;
+            const int BlurBackground = 0x000000;
 
             var result = default(int);
             var accentSize = Marshal.SizeOf<AccentPolicy>();

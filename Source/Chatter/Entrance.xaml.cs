@@ -3,7 +3,7 @@ using Chatter.Pages;
 using Chatter.Windows;
 using Mikodev.Links;
 using Mikodev.Links.Messages;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -59,10 +59,10 @@ namespace Chatter
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            BindingList<LinkProfile> Filter(string input)
+            static ObservableCollection<LinkProfile> Filter(string input)
             {
                 Debug.Assert(input.ToUpperInvariant() == input);
-                var result = new BindingList<LinkProfile>();
+                var result = new ObservableCollection<LinkProfile>();
                 foreach (var item in App.CurrentClient.ProfileCollection)
                     if (item.Name.ToUpperInvariant().Contains(input) || item.Text.ToUpperInvariant().Contains(input))
                         result.Add(item);

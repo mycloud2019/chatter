@@ -4,6 +4,7 @@ using Mikodev.Links.Implementations;
 using Mikodev.Links.Messages;
 using Mikodev.Links.Messages.Implementations;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -44,7 +45,7 @@ namespace Mikodev.Links
 
         public ILinkUIContext UIContext { get; }
 
-        public BindingList<LinkProfile> ProfileCollection { get; } = new BindingList<LinkProfile>();
+        public ObservableCollection<LinkProfile> ProfileCollection { get; } = new ObservableCollection<LinkProfile>();
 
         public DirectoryInfo ReceiveDirectory => new DirectoryInfo(Environment.ShareDirectory);
 
@@ -141,7 +142,7 @@ namespace Mikodev.Links
         /// 向目标用户发送图片消息哈希报文, 在文件 IO 出错时抛出异常, 在网络发送失败时不抛出异常
         /// </summary>
         /// <param name="profile">目标用户</param>
-        /// <param name="filePath">图片路径</param>
+        /// <param name="fileInfo">图片路径</param>
         public async Task SendImageAsync(LinkProfile profile, FileInfo fileInfo)
         {
             var result = await Cache.SetCacheAsync(fileInfo, cancellation.Token);

@@ -24,7 +24,7 @@
             <Ellipse Grid.Row="0" Height="128" Width="128" Style="{StaticResource ClientProfileImageStyle}" />
             <TextBox Grid.Row="2" Width="240" MaxLength="24" Tag="Nick Name" Text="{Binding Path=Name}" />
             <TextBox Grid.Row="4" Width="240" MaxLength="24" Tag="Status" Text="{Binding Path=Text}" />
-            <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Tag="image" Width="100" Content="New Image" Style="{DynamicResource FlattenButtonStyle}" />
                 <Control Focusable="False" Width="12" />
                 <Button Tag="go" Width="80" Content="Go!" Style="{DynamicResource FlattenButtonStyle}" />

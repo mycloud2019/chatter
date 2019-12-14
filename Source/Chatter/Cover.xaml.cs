@@ -4,7 +4,7 @@ using Mikodev.Optional;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
+using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,19 +28,19 @@ namespace Chatter
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            IsEnabled = false;
+            this.IsEnabled = false;
+            using var _0 = Disposable.Create(() => this.IsEnabled = true);
+
             var exists = File.Exists(settingsPath);
             var result = exists
-                ? await TryAsync(UsingAsync(() => new StreamReader(settingsPath, Encoding.UTF8), LinkSettings.CreateAsync))
+                ? await TryAsync(() => LinkSettings.LoadAsync(settingsPath))
                 : Ok<LinkSettings, Exception>(default);
             if (exists && result.IsError())
-                _ = MessageBox.Show(result.UnwrapError().Message, "Error while loading settings", MessageBoxButton.OK, MessageBoxImage.Error);
-            var context = new SynchronizationUIContext(TaskScheduler.FromCurrentSynchronizationContext(), Dispatcher);
-            client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), context);
+                _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), new SynchronizationUIContext(TaskScheduler.FromCurrentSynchronizationContext(), Dispatcher));
             if (exists == false || result.IsError())
                 client.Profile.Name = string.Concat(Environment.UserName, "@", Environment.MachineName);
             DataContext = client.Profile;
-            IsEnabled = true;
         }
 
         private async void Button_Click(object sender, RoutedEventArgs e)
@@ -48,18 +48,22 @@ namespace Chatter
             Debug.Assert(client != null);
             var button = (Button)e.OriginalSource;
             var tag = button.Tag as string;
+
             button.IsEnabled = false;
+            using var _0 = Disposable.Create(() => button.IsEnabled = true);
 
             if (tag == "go")
             {
-                var settings = client.Settings;
-                var result = await TryAsync(UsingAsync(() => new StreamWriter(settingsPath, false, Encoding.UTF8), settings.SaveAsync));
-                if (result.IsError())
-                    _ = MessageBox.Show(result.UnwrapError().Message, "Error while saving settings", MessageBoxButton.OK, MessageBoxImage.Error);
-                _ = await client.StartAsync();
                 App.CurrentClient = client;
-                var entrance = new Entrance();
-                entrance.Show();
+                var settings = client.Settings;
+                var source = await TryAsync(() => settings.SaveAsync(settingsPath));
+                if (source.IsError())
+                    _ = MessageBox.Show(source.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var result = await TryAsync(() => client.StartAsync());
+                if (result.IsError())
+                    _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                else
+                    new Entrance().Show();
                 Close();
             }
             else if (tag == "image")
@@ -68,8 +72,6 @@ namespace Chatter
                 if (dialog.ShowDialog(this) == true)
                     _ = await TryAsync(() => client.SetProfileImageAsync(new FileInfo(dialog.FileName)));
             }
-
-            button.IsEnabled = true;
         }
     }
 }

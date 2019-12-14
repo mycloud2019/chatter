@@ -59,7 +59,7 @@
                             </Grid>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding Path=ProfileStatus}" Value="Online">
+                            <DataTrigger Binding="{Binding Path=OnlineStatus}" Value="Online">
                                 <Setter TargetName="offlineText" Property="Visibility" Value="Hidden" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>

@@ -37,7 +37,7 @@ namespace Mikodev.Links
 
             var collection = client.ProfileCollection;
 
-            static bool NotOnline(LinkProfile profile) => profile.ProfileStatus != LinkProfileStatus.Online;
+            static bool NotOnline(LinkProfile profile) => profile.OnlineStatus != LinkOnlineStatus.Online;
 
             lock (locker)
             {
@@ -64,7 +64,7 @@ namespace Mikodev.Links
             {
                 var span = DateTime.Now - profile.LastOnlineDateTime;
                 if (span < TimeSpan.Zero || span > environment.ProfileOnlineTimeout)
-                    profile.ProfileStatus = LinkProfileStatus.Offline;
+                    profile.OnlineStatus = LinkOnlineStatus.Offline;
                 var imageHash = profile.RemoteImageHash;
                 if (!string.IsNullOrEmpty(imageHash) && imageHash != profile.ImageHash)
                     _ = Task.Run(() => UpdateImageAsync(profile));
@@ -135,7 +135,7 @@ namespace Mikodev.Links
                 profile.TcpPort = tcpPort;
                 profile.UdpPort = udpPort;
                 profile.LastOnlineDateTime = DateTime.Now;
-                profile.ProfileStatus = LinkProfileStatus.Online;
+                profile.OnlineStatus = LinkOnlineStatus.Online;
                 profile.RemoteImageHash = imageHash;
 
                 if (instance != null)

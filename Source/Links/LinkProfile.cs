@@ -1,6 +1,7 @@
 ﻿using Mikodev.Links.Messages;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Net;
 using System.Runtime.CompilerServices;
@@ -15,7 +16,7 @@ namespace Mikodev.Links
 
         private DateTime lastOnlineDateTime;
 
-        private LinkProfileStatus profileStatus = LinkProfileStatus.Online;
+        private LinkOnlineStatus onlineStatus = LinkOnlineStatus.Online;
 
         private IPAddress address;
 
@@ -62,10 +63,10 @@ namespace Mikodev.Links
             set => OnPropertyChange(ref text, value);
         }
 
-        public LinkProfileStatus ProfileStatus
+        public LinkOnlineStatus OnlineStatus
         {
-            get => profileStatus;
-            internal set => OnPropertyChange(ref profileStatus, value);
+            get => onlineStatus;
+            internal set => OnPropertyChange(ref onlineStatus, value);
         }
 
         public DateTime LastOnlineDateTime
@@ -112,7 +113,7 @@ namespace Mikodev.Links
 
         public string RemoteImageHash { get; internal set; }
 
-        public BindingList<Message> MessageCollection { get; } = new BindingList<Message>();
+        public ObservableCollection<Message> MessageCollection { get; } = new ObservableCollection<Message>();
 
         public IPEndPoint GetTcpEndPoint() => new IPEndPoint(address, tcpPort);
 
