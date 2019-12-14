@@ -1,0 +1,34 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Chatter.Viewer.Controls"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="480"
+        x:Class="Chatter.Viewer.Entrance"
+        Height="480" Width="800" WindowStartupLocation="CenterScreen">
+  <Grid ColumnDefinitions="300 *">
+    <Grid Grid.Column="0" RowDefinitions="Auto Auto Auto * Auto" Background="#FFB0B0B0">
+      <Grid Grid.Row="1" DataContext="{Binding Path=Profile}" ColumnDefinitions="Auto *">
+        <local:ProfileImage Grid.Column="0" Margin="14,4" Height="36" Width="36" DataContext="{Binding Path=ImagePath}" />
+      </Grid>
+      <Grid Grid.Row="2">
+        <TextBox Margin="14,10" />
+      </Grid>
+      <Grid Grid.Row="3">
+        <Grid RowDefinitions="Auto *">
+          <TextBlock Grid.Row="0" Margin="14,4" Text="All" />
+          <ListBox Name="listbox" Grid.Row="1" Items="{Binding Path=ProfileCollection}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <local:ProfileElement Margin="14,0" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
+      </Grid>
+    </Grid>
+    <Grid Grid.Column="1">
+      <Border Name="dialog" />
+    </Grid>
+  </Grid>
+</Window>
