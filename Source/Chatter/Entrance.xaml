@@ -4,12 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Chatter"
         xmlns:controls="clr-namespace:Chatter.Controls"
         mc:Ignorable="d"
         Title="Chatter" Height="480" Width="880" MinHeight="480" MinWidth="720"
         WindowStartupLocation="CenterScreen" Style="{StaticResource FlattenWindowStyle}">
-    <Grid DataContext="{x:Static local:App.CurrentClient}">
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
             <ColumnDefinition Width="*" />
@@ -28,7 +27,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Ellipse Margin="14,4" Style="{StaticResource ClientProfileImageStyle}" />
+                <controls:ProfileImage Margin="14,4" MouseLeftButtonDown="UserControl_MouseLeftButtonDown" />
             </Grid>
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>

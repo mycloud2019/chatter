@@ -116,7 +116,7 @@ namespace Chatter.Pages
                 if (!new[] { ".JPG", ".PNG", ".BMP" }.Contains(Path.GetExtension(path).ToUpper()))
                     _ = await TryAsync(client.SendFileAsync(profile, path, x => new FileWindow(x).Show()));
                 else if ((await TryAsync(() => client.SendImageAsync(profile, new FileInfo(path)))) is var result && result.IsError())
-                    _ = MessageBox.Show(result.UnwrapError().Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Navigation;
 
@@ -19,10 +20,10 @@ namespace Chatter
         public Entrance()
         {
             InitializeComponent();
-            Loaded += Entrance_Loaded;
+            Loaded += Window_Loaded;
         }
 
-        private void Entrance_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Application.Current.MainWindow = this;
             var client = App.CurrentClient;
@@ -30,7 +31,7 @@ namespace Chatter
             client.NewFileReceiver += x => new FileWindow(x).Show();
             client.NewDirectoryReceiver += x => new DirectoryWindow(x).Show();
 
-            void handler(object s, MessageEventArgs message)
+            void NewMessageHandler(object s, MessageEventArgs message)
             {
                 Debug.Assert(App.CurrentClient == s);
                 var helper = new WindowInteropHelper(this);
@@ -38,7 +39,8 @@ namespace Chatter
                     _ = NativeMethods.FlashWindow(helper.Handle, true);
                 message.IsHandled = App.CurrentProfile == message.Profile;
             }
-            client.NewMessage += handler;
+            client.NewMessage += NewMessageHandler;
+            DataContext = client;
         }
 
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -79,6 +81,13 @@ namespace Chatter
             clientTextBlock.Text = flag ? "All" : $"Search '{text}'";
             clientListBox.ItemsSource = list;
             clientListBox.SelectedIndex = list.IndexOf(App.CurrentProfile);
+        }
+
+        private void UserControl_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount != 2)
+                return;
+            new Cover { Owner = this }.Show();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

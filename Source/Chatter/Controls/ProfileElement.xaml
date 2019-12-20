@@ -3,8 +3,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Chatter.Controls"
              mc:Ignorable="d"
-             d:DesignHeight="120" d:DesignWidth="600">
+             d:DesignHeight="48" d:DesignWidth="240">
     <UserControl.Style>
         <Style TargetType="UserControl">
             <Setter Property="Template">
@@ -18,7 +19,7 @@
                             </Grid.ColumnDefinitions>
                             <Grid Grid.Column="0">
                                 <Grid Margin="0,6">
-                                    <Ellipse Name="ellipse" Style="{StaticResource ClientProfileImageStyle}" />
+                                    <controls:ProfileImage />
                                     <Ellipse Fill="#FF3030" Height="8" Width="8" HorizontalAlignment="Right" VerticalAlignment="Top">
                                         <Ellipse.Effect>
                                             <DropShadowEffect Color="#FF3030" ShadowDepth="0" />

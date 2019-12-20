@@ -23,22 +23,12 @@ namespace Mikodev.Links
             base.GetObjectData(info, context);
         }
 
-        private static string GetMessage(LinkError error)
+        private static string GetMessage(LinkError error) => error switch
         {
-            switch (error)
-            {
-                case LinkError.InvalidData:
-                    return "Invalid data!";
-
-                case LinkError.InvalidHost:
-                    return "Invalid host!";
-
-                case LinkError.UdpPacketTooLarge:
-                    return "Udp packet too large!";
-
-                default:
-                    return "Undefined error!";
-            }
-        }
+            LinkError.InvalidData => "Invalid data!",
+            LinkError.InvalidHost => "Invalid host!",
+            LinkError.UdpPacketTooLarge => "Udp packet too large!",
+            _ => "Undefined error!",
+        };
     }
 }

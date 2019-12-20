@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:Chatter.Controls"
         mc:Ignorable="d"
         Title="Cover" Height="360" Width="320" WindowStartupLocation="CenterScreen" Style="{StaticResource FlattenWindowStyle}" ResizeMode="CanMinimize">
     <Grid Button.Click="Button_Click" Background="{StaticResource Flatten.Secondary.Background}">
@@ -21,7 +22,7 @@
                 <RowDefinition Height="12" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Ellipse Grid.Row="0" Height="128" Width="128" Style="{StaticResource ClientProfileImageStyle}" />
+            <controls:ProfileImage Grid.Row="0" Height="128" Width="128" />
             <TextBox Grid.Row="2" Width="240" MaxLength="24" Tag="Nick Name" Text="{Binding Path=Name}" />
             <TextBox Grid.Row="4" Width="240" MaxLength="24" Tag="Status" Text="{Binding Path=Text}" />
             <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
