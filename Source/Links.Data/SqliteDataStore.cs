@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links.Data
 {
-    public class SqliteMessageDataStore : IMessageDataStore
+    public class SqliteDataStore : ILinkDataStore
     {
         private readonly string filename;
 
-        public SqliteMessageDataStore(string filename)
+        public SqliteDataStore(string filename)
         {
             if (string.IsNullOrEmpty(filename))
                 throw new ArgumentException("Argument can not be null or empty.", nameof(filename));
@@ -22,6 +22,7 @@ namespace Mikodev.Links.Data
         public async Task<IEnumerable<MessageModel>> QueryMessagesAsync(string profileId, int count)
         {
             using var context = new MessageContext(filename);
+            _ = await context.Database.EnsureCreatedAsync();
             var query = context.Messages.Where(x => x.ProfileId == profileId).OrderByDescending(x => x.DateTime).Take(count);
             var messages = await query.ToListAsync();
             return messages;
@@ -30,6 +31,7 @@ namespace Mikodev.Links.Data
         public async Task StoreMessagesAsync(IEnumerable<MessageModel> messages)
         {
             using var context = new MessageContext(filename);
+            _ = await context.Database.EnsureCreatedAsync();
             await context.Messages.AddRangeAsync(messages);
             _ = await context.SaveChangesAsync();
         }

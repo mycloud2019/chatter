@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links.Data.Abstractions
 {
-    public interface IMessageDataStore
+    public interface ILinkDataStore
     {
         Task<IEnumerable<MessageModel>> QueryMessagesAsync(string profileId, int count);
 

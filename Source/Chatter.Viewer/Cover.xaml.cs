@@ -5,6 +5,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Chatter.Viewer.Implementations;
 using Mikodev.Links;
+using Mikodev.Links.Data;
 using Mikodev.Optional;
 using System;
 using System.Collections.Generic;
@@ -51,7 +52,9 @@ namespace Chatter.Viewer
                 : Ok<LinkSettings, Exception>(default);
             if (exists && result.IsError())
                 await Notice.ShowDialog(this, result.UnwrapError().Message, "Error");
-            client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), new SynchronizationUIContext(Dispatcher.UIThread));
+            var store = new SqliteDataStore($"{nameof(Chatter)}.db");
+            var context = new SynchronizationUIContext(Dispatcher.UIThread);
+            client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), context, store);
             client.Profile.Name = string.Concat(Environment.UserName, "@", Environment.MachineName);
             DataContext = client.Profile;
         }

@@ -1,5 +1,6 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
+using Mikodev.Links.Data.Abstractions;
 using Mikodev.Links.Implementations;
 using Mikodev.Links.Messages;
 using Mikodev.Links.Messages.Implementations;
@@ -17,18 +18,17 @@ namespace Mikodev.Links
 {
     public sealed partial class LinkClient : IDisposable
     {
-        #region private
         private const int None = 0, Started = 1, Disposed = 2;
 
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 
         private int status = None;
-        #endregion
 
-        #region internal
         internal CancellationToken CancellationToken { get; }
 
         internal IGenerator Generator { get; } = Binary.Generator.CreateDefault();
+
+        internal ILinkDataStore DataStore { get; }
 
         internal ILinkCache Cache { get; }
 
@@ -37,7 +37,6 @@ namespace Mikodev.Links
         internal LinkContracts Contracts { get; }
 
         internal LinkEnvironment Environment { get; }
-        #endregion
 
         public LinkProfile Profile { get; }
 
@@ -51,15 +50,18 @@ namespace Mikodev.Links
 
         public event EventHandler<MessageEventArgs> NewMessage;
 
-        public LinkClient(LinkSettings settings, ILinkUIContext context)
+        public LinkClient(LinkSettings settings, ILinkUIContext context, ILinkDataStore store)
         {
             if (settings is null)
                 throw new ArgumentNullException(nameof(settings));
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
+            if (store is null)
+                throw new ArgumentNullException(nameof(store));
             var environment = settings.Environment;
             CancellationToken = cancellation.Token;
             UIContext = context;
+            DataStore = store;
 
             void ProfileChanged(object sender, PropertyChangedEventArgs e)
             {
@@ -178,7 +180,19 @@ namespace Mikodev.Links
 
             var success = parameter.SenderProfile != null;
             if (success)
+            {
                 await UIContext.InvokeAsync(AppendMessage);
+                var model = new MessageModel
+                {
+                    MessageId = message.Id,
+                    ProfileId = parameter.SenderProfile.Id,
+                    DateTime = message.DateTime,
+                    Path = message.Path,
+                    Reference = message.Reference.ToString(),
+                    Data = message is TextMessage text ? text.Text : ((ImageMessage)message).ImageHash,
+                };
+                _ = Task.Run(() => DataStore.StoreMessagesAsync(new[] { model }));
+            }
             var data = new { status = success ? "ok" : "refused" };
             await parameter.ResponseAsync(data);
             return success;

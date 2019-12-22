@@ -1,5 +1,6 @@
 ﻿using Chatter.Implementations;
 using Mikodev.Links;
+using Mikodev.Links.Data;
 using Mikodev.Optional;
 using System;
 using System.Diagnostics;
@@ -36,7 +37,9 @@ namespace Chatter
                     : Ok<LinkSettings, Exception>(default);
                 if (exists && result.IsError())
                     _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                var client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), new SynchronizationUIContext(TaskScheduler.FromCurrentSynchronizationContext(), Application.Current.Dispatcher));
+                var store = new SqliteDataStore($"{nameof(Chatter)}.db");
+                var context = new SynchronizationUIContext(TaskScheduler.FromCurrentSynchronizationContext(), Application.Current.Dispatcher);
+                var client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), context, store);
                 if (exists == false || result.IsError())
                     client.Profile.Name = $"{Environment.UserName}@{Environment.MachineName}";
                 return client;

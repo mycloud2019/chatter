@@ -19,6 +19,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Links.Abstractions\Links.Abstractions.csproj" />
+    <ProjectReference Include="..\Links.Data.Abstractions\Links.Data.Abstractions.csproj" />
+    <ProjectReference Include="..\Links.Data\Links.Data.csproj" />
     <ProjectReference Include="..\Links\Links.csproj" />
   </ItemGroup>
 </Project>
