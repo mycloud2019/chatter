@@ -52,7 +52,7 @@ namespace Chatter.Viewer
             var profile = e.AddedItems?.OfType<LinkProfile>()?.FirstOrDefault();
             if (profile == null)
                 return;
-            profile.Hint = 0;
+            profile.UnreadCount = 0;
             App.CurrentProfile = profile;
             dialog.Child = new Dialog();
         }

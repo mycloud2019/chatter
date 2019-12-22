@@ -1,4 +1,5 @@
 ﻿using Mikodev.Links.Abstractions;
+using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using System;
 using System.Collections.Generic;
@@ -37,14 +38,14 @@ namespace Mikodev.Links
 
             var collection = client.ProfileCollection;
 
-            static bool NotOnline(LinkProfile profile) => profile.OnlineStatus != LinkOnlineStatus.Online;
+            static bool NotOnline(LinkProfile profile) => profile.OnlineStatus != ProfileOnlineStatus.Online;
 
             lock (locker)
             {
                 var alpha = collection.Where(NotOnline).ToList();
                 var bravo = profiles.Values.Where(NotOnline).ToList();
                 alpha.ForEach(x => collection.Remove(x));
-                bravo.ForEach(x => profiles.Remove(x.Id));
+                bravo.ForEach(x => profiles.Remove(x.ProfileId));
             }
         }
 
@@ -64,7 +65,7 @@ namespace Mikodev.Links
             {
                 var span = DateTime.Now - profile.LastOnlineDateTime;
                 if (span < TimeSpan.Zero || span > environment.ProfileOnlineTimeout)
-                    profile.OnlineStatus = LinkOnlineStatus.Offline;
+                    profile.SetOnlineStatus(ProfileOnlineStatus.Offline);
                 var imageHash = profile.RemoteImageHash;
                 if (!string.IsNullOrEmpty(imageHash) && imageHash != profile.ImageHash)
                     _ = Task.Run(() => UpdateImageAsync(profile));
@@ -87,7 +88,7 @@ namespace Mikodev.Links
 
             var fileInfo = await cache.GetCacheAsync(imageHash, profile.GetTcpEndPoint(), client.CancellationToken);
             profile.ImageHash = imageHash;
-            await client.UIContext.InvokeAsync(() => profile.ImagePath = fileInfo.FullName);
+            await client.UIContext.InvokeAsync(() => profile.SetImagePath(fileInfo.FullName));
         }
 
         private async Task BroadcastLoopAsync()
@@ -131,11 +132,11 @@ namespace Mikodev.Links
             {
                 profile.Name = name;
                 profile.Text = text;
-                profile.Address = address;
+                profile.SetIPAddress(address);
                 profile.TcpPort = tcpPort;
                 profile.UdpPort = udpPort;
                 profile.LastOnlineDateTime = DateTime.Now;
-                profile.OnlineStatus = LinkOnlineStatus.Online;
+                profile.SetOnlineStatus(ProfileOnlineStatus.Online);
                 profile.RemoteImageHash = imageHash;
 
                 if (instance != null)

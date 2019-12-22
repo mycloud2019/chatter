@@ -1,5 +1,5 @@
 ﻿using Avalonia.Data.Converters;
-using Mikodev.Links;
+using Mikodev.Links.Annotations;
 using System;
 using System.Globalization;
 
@@ -11,8 +11,8 @@ namespace Chatter.Viewer.ValueConverters
         {
             return value switch
             {
-                LinkOnlineStatus.Online => string.Empty,
-                LinkOnlineStatus.Offline => $"[{value.ToString()}]",
+                ProfileOnlineStatus.Online => string.Empty,
+                ProfileOnlineStatus.Offline => $"[{value.ToString()}]",
                 _ => "<Invalid>"
             };
         }

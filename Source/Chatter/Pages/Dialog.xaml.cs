@@ -5,6 +5,7 @@ using Mikodev.Links.Messages;
 using Mikodev.Optional;
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace Chatter.Pages
 {
     public partial class Dialog : Page
     {
-        private LinkProfile profile;
+        private readonly LinkProfile profile;
 
         private ObservableCollection<Message> messages;
 
@@ -34,7 +35,7 @@ namespace Chatter.Pages
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            Debug.Assert(profile.Hint == 0);
+            Debug.Assert(profile.UnreadCount == 0);
             App.TextBoxKeyDown += TextBox_KeyDown;
 
             scrollViewer = listbox.FindChild<ScrollViewer>(string.Empty);
@@ -73,7 +74,7 @@ namespace Chatter.Pages
             e.Handled = true;
         }
 
-        private void ObservableCollection_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void ObservableCollection_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             scrollViewer.ScrollToBottom();
         }

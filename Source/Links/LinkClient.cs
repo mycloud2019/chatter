@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links
 {
-    public sealed partial class LinkClient : IDisposable
+    public sealed partial class LinkClient : IDisposable, ILinkClient
     {
         private const int None = 0, Started = 1, Disposed = 2;
 
@@ -34,6 +34,8 @@ namespace Mikodev.Links
 
         internal ILinkNetwork Network { get; }
 
+        internal ILinkUIContext UIContext { get; }
+
         internal LinkContracts Contracts { get; }
 
         internal LinkEnvironment Environment { get; }
@@ -41,8 +43,6 @@ namespace Mikodev.Links
         public LinkProfile Profile { get; }
 
         public LinkSettings Settings { get; }
-
-        public ILinkUIContext UIContext { get; }
 
         public ObservableCollection<LinkProfile> ProfileCollection { get; } = new ObservableCollection<LinkProfile>();
 
@@ -83,15 +83,16 @@ namespace Mikodev.Links
             var imageHash = environment.ClientImageHash;
             var imagePath = default(FileInfo);
             var exists = !string.IsNullOrEmpty(imageHash) && Cache.TryGetCache(imageHash, out imagePath);
-
-            Profile = new LinkProfile(environment.ClientId, LinkProfileType.Client)
+            var profile = new LinkProfile(environment.ClientId, LinkProfileType.Client)
             {
                 Name = environment.ClientName,
                 Text = environment.ClientText,
                 ImageHash = exists ? imageHash : string.Empty,
-                ImagePath = exists ? imagePath.FullName : string.Empty,
-                Address = IPAddress.Loopback,
             };
+            profile.SetImagePath(exists ? imagePath.FullName : string.Empty);
+            profile.SetIPAddress(IPAddress.Loopback);
+
+            Profile = profile;
             Profile.PropertyChanged += ProfileChanged;
 
             Initial(Network);
@@ -158,7 +159,7 @@ namespace Mikodev.Links
             var result = await Cache.SetCacheAsync(fileInfo, cancellation.Token);
             var profile = Profile;
             profile.ImageHash = result.Hash;
-            profile.ImagePath = result.FileInfo.FullName;
+            profile.SetImagePath(result.FileInfo.FullName);
             return result.Hash;
         }
 
@@ -175,7 +176,7 @@ namespace Mikodev.Links
                 NewMessage?.Invoke(this, eventArgs);
                 if (eventArgs.IsHandled)
                     return;
-                profile.Hint++;
+                profile.UnreadCount++;
             }
 
             var success = parameter.SenderProfile != null;
@@ -185,7 +186,7 @@ namespace Mikodev.Links
                 var model = new MessageModel
                 {
                     MessageId = message.Id,
-                    ProfileId = parameter.SenderProfile.Id,
+                    ProfileId = parameter.SenderProfile.ProfileId,
                     DateTime = message.DateTime,
                     Path = message.Path,
                     Reference = message.Reference.ToString(),

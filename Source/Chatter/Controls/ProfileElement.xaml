@@ -27,7 +27,7 @@
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Path=Hint}" Value="0">
+                                                    <DataTrigger Binding="{Binding Path=UnreadCount}" Value="0">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -48,7 +48,7 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="{Binding Path=Name}" />
-                                    <TextBlock Name="offlineText" Grid.Column="2" Text="[Offline]"
+                                    <TextBlock Name="address" Grid.Column="2" Text="{Binding Path=IPAddress, StringFormat={}[{0}]}"
                                                FontSize="{StaticResource Flatten.Secondary.FontSize}"
                                                Foreground="{StaticResource Flatten.Secondary.Foreground}">
                                     </TextBlock>
@@ -60,8 +60,8 @@
                             </Grid>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding Path=OnlineStatus}" Value="Online">
-                                <Setter TargetName="offlineText" Property="Visibility" Value="Hidden" />
+                            <DataTrigger Binding="{Binding Path=OnlineStatus}" Value="Offline">
+                                <Setter TargetName="address" Property="Text" Value="[Offline]" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

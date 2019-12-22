@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chatter.Viewer", "Chatter.V
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Links.Data.Abstractions", "Links.Data.Abstractions\Links.Data.Abstractions.csproj", "{46719F29-8495-4B99-8BB0-E4324FBFF895}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Links.Data", "Links.Data\Links.Data.csproj", "{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Links.Data", "Links.Data\Links.Data.csproj", "{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Links.Annotations", "Links.Annotations\Links.Annotations.csproj", "{9DB28B5C-A653-4173-8037-65E0F7332BE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,10 @@ Global
 		{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

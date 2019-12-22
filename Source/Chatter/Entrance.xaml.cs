@@ -48,7 +48,7 @@ namespace Chatter
         {
             var current = e.AddedItems.Cast<LinkProfile>().FirstOrDefault();
             if (current != null)
-                current.Hint = 0;
+                current.UnreadCount = 0;
             App.CurrentProfile = current;
             dialogFrame.Content = current == null ? null : new Dialog();
         }
