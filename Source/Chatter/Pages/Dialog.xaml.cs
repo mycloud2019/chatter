@@ -26,18 +26,16 @@ namespace Chatter.Pages
         public Dialog()
         {
             InitializeComponent();
+            profile = App.CurrentProfile;
+            DataContext = profile;
             Loaded += Page_Loaded;
             Unloaded += Page_Unloaded;
         }
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            if (profile == null)
-                profile = App.CurrentProfile;
-            Debug.Assert(profile != null);
             Debug.Assert(profile.Hint == 0);
             App.TextBoxKeyDown += TextBox_KeyDown;
-            DataContext = profile;
 
             scrollViewer = listbox.FindChild<ScrollViewer>(string.Empty);
             Debug.Assert(scrollViewer != null);

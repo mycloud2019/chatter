@@ -17,30 +17,31 @@ namespace Chatter
 {
     public partial class Entrance : Window
     {
+        private readonly LinkClient client;
+
         public Entrance()
         {
             InitializeComponent();
+            client = App.CurrentClient;
+            DataContext = client;
             Loaded += Window_Loaded;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Application.Current.MainWindow = this;
-            var client = App.CurrentClient;
             Debug.Assert(client != null);
             client.NewFileReceiver += x => new FileWindow(x).Show();
             client.NewDirectoryReceiver += x => new DirectoryWindow(x).Show();
 
             void NewMessageHandler(object s, MessageEventArgs message)
             {
-                Debug.Assert(App.CurrentClient == s);
                 var helper = new WindowInteropHelper(this);
                 if (IsActive == false)
                     _ = NativeMethods.FlashWindow(helper.Handle, true);
                 message.IsHandled = App.CurrentProfile == message.Profile;
             }
             client.NewMessage += NewMessageHandler;
-            DataContext = client;
         }
 
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -61,19 +62,17 @@ namespace Chatter
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            static ObservableCollection<LinkProfile> Filter(string input)
+            ObservableCollection<LinkProfile> Filter(string input)
             {
                 Debug.Assert(input.ToUpperInvariant() == input);
                 var result = new ObservableCollection<LinkProfile>();
-                foreach (var item in App.CurrentClient.ProfileCollection)
+                foreach (var item in client.ProfileCollection)
                     if (item.Name.ToUpperInvariant().Contains(input) || item.Text.ToUpperInvariant().Contains(input))
                         result.Add(item);
                 return result;
             }
 
             Debug.Assert(sender == searchBox);
-            var client = App.CurrentClient;
-            Debug.Assert(client != null);
             var text = searchBox.Text;
             var flag = string.IsNullOrEmpty(text);
             var list = flag ? client.ProfileCollection : Filter(text.ToUpperInvariant());
@@ -94,7 +93,6 @@ namespace Chatter
         {
             var button = (Button)e.OriginalSource;
             var tag = button.Tag as string;
-            var client = App.CurrentClient;
 
             if (tag == "check")
             {
