@@ -61,7 +61,7 @@ namespace Chatter.Pages
             var text = textbox.Text;
             if (string.IsNullOrEmpty(text))
                 return;
-            var _ = App.CurrentClient.SendTextAsync(profile, textbox.Text);
+            var _ = App.CurrentClient.PutTextAsync(profile, textbox.Text);
             textbox.Text = string.Empty;
         }
 
@@ -111,13 +111,13 @@ namespace Chatter.Pages
             var client = App.CurrentClient;
             if (Directory.Exists(path))
             {
-                _ = await TryAsync(client.SendDirectoryAsync(profile, path, x => new DirectoryWindow(x).Show()));
+                _ = await TryAsync(client.PutDirectoryAsync(profile, path, x => new DirectoryWindow(x).Show()));
             }
             else if (File.Exists(path))
             {
                 if (!new[] { ".JPG", ".PNG", ".BMP" }.Contains(Path.GetExtension(path).ToUpper()))
-                    _ = await TryAsync(client.SendFileAsync(profile, path, x => new FileWindow(x).Show()));
-                else if ((await TryAsync(() => client.SendImageAsync(profile, path))) is var result && result.IsError())
+                    _ = await TryAsync(client.PutFileAsync(profile, path, x => new FileWindow(x).Show()));
+                else if ((await TryAsync(() => client.PutImageAsync(profile, path))) is var result && result.IsError())
                     _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

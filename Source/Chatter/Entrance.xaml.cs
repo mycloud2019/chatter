@@ -6,6 +6,7 @@ using Mikodev.Links.Annotations;
 using Mikodev.Links.Messages;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -99,7 +100,7 @@ namespace Chatter
             {
                 void OpenDirectory()
                 {
-                    var directory = client.ReceivingDirectory;
+                    var directory = new DirectoryInfo(client.ReceivingDirectory);
                     if (!directory.Exists)
                         return;
                     using (Process.Start("explorer", "/e," + directory.FullName)) { }

@@ -50,7 +50,7 @@ namespace Mikodev.Links
 
         public override IEnumerable<Profile> Profiles => Contracts.ProfileCollection;
 
-        public override DirectoryInfo ReceivingDirectory => new DirectoryInfo(Environment.ShareDirectory);
+        public override string ReceivingDirectory => Environment.ShareDirectory;
 
         public override event EventHandler<MessageEventArgs> NewMessage;
 
@@ -135,7 +135,7 @@ namespace Mikodev.Links
         /// <summary>
         /// 向目标用户发送文本消息, 失败时不抛出异常
         /// </summary>
-        public override async Task SendTextAsync(Profile profile, string text)
+        public override async Task PutTextAsync(Profile profile, string text)
         {
             if (profile == null)
                 throw new ArgumentNullException(nameof(profile));
@@ -148,7 +148,7 @@ namespace Mikodev.Links
         /// <summary>
         /// 向目标用户发送图片消息哈希报文, 在文件 IO 出错时抛出异常, 在网络发送失败时不抛出异常
         /// </summary>
-        public override async Task SendImageAsync(Profile profile, string file)
+        public override async Task PutImageAsync(Profile profile, string file)
         {
             var result = await Cache.SetCacheAsync(new FileInfo(file), cancellation.Token);
             var message = new ImageMessage() { ImageHash = result.Hash };

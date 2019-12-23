@@ -31,7 +31,7 @@ namespace Mikodev.Links
             network.RegisterHandler("link.share.directory", HandleDirectoryAsync);
         }
 
-        public override async Task SendFileAsync(Profile profile, string file, FileSenderHandler handler)
+        public override async Task PutFileAsync(Profile profile, string file, FileSenderHandler handler)
         {
             if (profile == null || handler == null || !(profile is LinkProfile receiver))
                 throw new ArgumentNullException();
@@ -55,7 +55,7 @@ namespace Mikodev.Links
             });
         }
 
-        public override async Task SendDirectoryAsync(Profile profile, string directory, DirectorySenderHandler handler)
+        public override async Task PutDirectoryAsync(Profile profile, string directory, DirectorySenderHandler handler)
         {
             if (profile == null || handler == null || !(profile is LinkProfile receiver))
                 throw new ArgumentNullException();

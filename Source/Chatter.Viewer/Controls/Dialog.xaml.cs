@@ -85,7 +85,7 @@ namespace Chatter.Viewer.Controls
             var text = textbox.Text;
             if (string.IsNullOrEmpty(text))
                 return;
-            _ = App.CurrentClient.SendTextAsync(profile, text);
+            _ = App.CurrentClient.PutTextAsync(profile, text);
             textbox.Text = string.Empty;
         }
     }

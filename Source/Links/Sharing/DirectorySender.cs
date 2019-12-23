@@ -12,6 +12,6 @@ namespace Mikodev.Links.Sharing
             FullName = fullPath;
         }
 
-        protected override Task InvokeAsync() => SendDirectoryAsync(FullName);
+        protected override Task InvokeAsync() => PutDirectoryAsync(FullName);
     }
 }

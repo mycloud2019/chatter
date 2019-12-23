@@ -2,7 +2,6 @@
 using Mikodev.Links.Messages;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace Mikodev.Links
@@ -19,7 +18,7 @@ namespace Mikodev.Links
 
         public abstract IEnumerable<Profile> Profiles { get; }
 
-        public abstract DirectoryInfo ReceivingDirectory { get; }
+        public abstract string ReceivingDirectory { get; }
 
         public abstract ILinkSettings Settings { get; }
 
@@ -27,13 +26,13 @@ namespace Mikodev.Links
 
         public abstract Task<IEnumerable<Message>> GetMessagesAsync(Profile profile);
 
-        public abstract Task SendTextAsync(Profile profile, string text);
+        public abstract Task PutTextAsync(Profile profile, string text);
 
-        public abstract Task SendImageAsync(Profile profile, string file);
+        public abstract Task PutImageAsync(Profile profile, string file);
 
-        public abstract Task SendFileAsync(Profile profile, string file, FileSenderHandler handler);
+        public abstract Task PutFileAsync(Profile profile, string file, FileSenderHandler handler);
 
-        public abstract Task SendDirectoryAsync(Profile profile, string directory, DirectorySenderHandler handler);
+        public abstract Task PutDirectoryAsync(Profile profile, string directory, DirectorySenderHandler handler);
 
         public abstract Task SetProfileImageAsync(string file);
 

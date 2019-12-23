@@ -15,7 +15,7 @@ namespace Mikodev.Links.Sharing
             // nothing
         }
 
-        protected async Task SendDirectoryAsync(string path)
+        protected async Task PutDirectoryAsync(string path)
         {
             await InternalSendDirectoryAsync(new DirectoryInfo(path), ImmutableList<string>.Empty);
             var tail = Generator.Encode(new { type = "end" });
@@ -32,7 +32,7 @@ namespace Mikodev.Links.Sharing
                 var length = file.Length;
                 var data = Generator.Encode(new { type = "file", name = file.Name, length });
                 await Stream.WriteWithHeaderAsync(data, CancellationToken);
-                await SendFileAsync(file.FullName, length);
+                await PutFileAsync(file.FullName, length);
             }
 
             foreach (var directory in directoryInfo.GetDirectories())

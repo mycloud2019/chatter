@@ -230,7 +230,7 @@ namespace Mikodev.Links.Sharing
             Speed = ticks.Average(x => x.Speed);
         }
 
-        protected async Task SendFileAsync(string path, long length)
+        protected async Task PutFileAsync(string path, long length)
         {
             var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             var buffer = new byte[Environment.TcpBufferLength];
