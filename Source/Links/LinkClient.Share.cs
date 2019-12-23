@@ -1,6 +1,7 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
 using Mikodev.Links.Abstractions.Models;
+using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using Mikodev.Links.Sharing;
 using Mikodev.Optional;
@@ -18,11 +19,11 @@ namespace Mikodev.Links
 
     public delegate void DirectoryReceiverHandler(DirectoryReceiver receiver);
 
-    public partial class LinkClient
+    internal partial class LinkClient
     {
-        public event FileReceiverHandler NewFileReceiver;
+        public override event FileReceiverHandler NewFileReceiver;
 
-        public event DirectoryReceiverHandler NewDirectoryReceiver;
+        public override event DirectoryReceiverHandler NewDirectoryReceiver;
 
         private void Initial(ILinkNetwork network)
         {
@@ -30,22 +31,22 @@ namespace Mikodev.Links
             network.RegisterHandler("link.share.directory", HandleDirectoryAsync);
         }
 
-        public async Task SendFileAsync(LinkProfile profile, string filePath, FileSenderHandler handler)
+        public override async Task SendFileAsync(Profile profile, string file, FileSenderHandler handler)
         {
-            if (profile == null || handler == null)
+            if (profile == null || handler == null || !(profile is LinkProfile receiver))
                 throw new ArgumentNullException();
-            var fileInfo = new FileInfo(filePath);
+            var fileInfo = new FileInfo(file);
             if (!fileInfo.Exists)
-                throw new FileNotFoundException("File not found!", filePath);
+                throw new FileNotFoundException("File not found!", file);
             var length = fileInfo.Length;
             var packet = new { name = fileInfo.Name, length };
-            _ = await Network.ConnectAsync("link.share.file", packet, profile.GetTcpEndPoint(), CancellationToken, async stream =>
+            _ = await Network.ConnectAsync("link.share.file", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
             {
                 var result = await stream.ReadBlockWithHeaderAsync(Environment.TcpBufferLimits, CancellationToken);
                 var data = new Token(Generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new LinkException(LinkError.InvalidData);
-                using (var sender = new FileSender(this, profile, stream, fileInfo.FullName, length))
+                using (var sender = new FileSender(this, receiver, stream, fileInfo.FullName, length))
                 {
                     await UIContext.InvokeAsync(() => handler.Invoke(sender));
                     await sender.LoopAsync();
@@ -54,21 +55,21 @@ namespace Mikodev.Links
             });
         }
 
-        public async Task SendDirectoryAsync(LinkProfile profile, string directoryPath, DirectorySenderHandler handler)
+        public override async Task SendDirectoryAsync(Profile profile, string directory, DirectorySenderHandler handler)
         {
-            if (profile == null || handler == null)
+            if (profile == null || handler == null || !(profile is LinkProfile receiver))
                 throw new ArgumentNullException();
-            var directoryInfo = new DirectoryInfo(directoryPath);
+            var directoryInfo = new DirectoryInfo(directory);
             if (!directoryInfo.Exists)
                 throw new DirectoryNotFoundException("Directory not found!");
             var packet = new { name = directoryInfo.Name };
-            _ = await Network.ConnectAsync("link.share.directory", packet, profile.GetTcpEndPoint(), CancellationToken, async stream =>
+            _ = await Network.ConnectAsync("link.share.directory", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
             {
                 var result = await stream.ReadBlockWithHeaderAsync(Environment.TcpBufferLimits, CancellationToken);
                 var data = new Token(Generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new LinkException(LinkError.InvalidData);
-                using (var sender = new DirectorySender(this, profile, stream, directoryInfo.FullName))
+                using (var sender = new DirectorySender(this, receiver, stream, directoryInfo.FullName))
                 {
                     await UIContext.InvokeAsync(() => handler.Invoke(sender));
                     await sender.LoopAsync();

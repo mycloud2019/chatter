@@ -2,6 +2,7 @@
 using Chatter.Pages;
 using Chatter.Windows;
 using Mikodev.Links;
+using Mikodev.Links.Annotations;
 using Mikodev.Links.Messages;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -17,7 +18,7 @@ namespace Chatter
 {
     public partial class Entrance : Window
     {
-        private readonly LinkClient client;
+        private readonly Client client;
 
         public Entrance()
         {
@@ -46,7 +47,7 @@ namespace Chatter
 
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var current = e.AddedItems.Cast<LinkProfile>().FirstOrDefault();
+            var current = e.AddedItems.Cast<Profile>().FirstOrDefault();
             if (current != null)
                 current.UnreadCount = 0;
             App.CurrentProfile = current;
@@ -62,11 +63,11 @@ namespace Chatter
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            ObservableCollection<LinkProfile> Filter(string input)
+            ObservableCollection<Profile> Filter(string input)
             {
                 Debug.Assert(input.ToUpperInvariant() == input);
-                var result = new ObservableCollection<LinkProfile>();
-                foreach (var item in client.ProfileCollection)
+                var result = new ObservableCollection<Profile>();
+                foreach (var item in client.Profiles)
                     if (item.Name.ToUpperInvariant().Contains(input) || item.Text.ToUpperInvariant().Contains(input))
                         result.Add(item);
                 return result;
@@ -75,7 +76,7 @@ namespace Chatter
             Debug.Assert(sender == searchBox);
             var text = searchBox.Text;
             var flag = string.IsNullOrEmpty(text);
-            var list = flag ? client.ProfileCollection : Filter(text.ToUpperInvariant());
+            var list = flag ? (ObservableCollection<Profile>)client.Profiles : Filter(text.ToUpperInvariant());
 
             clientTextBlock.Text = flag ? "All" : $"Search '{text}'";
             clientListBox.ItemsSource = list;
@@ -98,7 +99,7 @@ namespace Chatter
             {
                 void OpenDirectory()
                 {
-                    var directory = client.ReceiveDirectory;
+                    var directory = client.ReceivingDirectory;
                     if (!directory.Exists)
                         return;
                     using (Process.Start("explorer", "/e," + directory.FullName)) { }
@@ -107,8 +108,8 @@ namespace Chatter
             }
             else if (tag == "clean")
             {
-                client.CleanProfileCollection();
-                if (!client.ProfileCollection.Contains(App.CurrentProfile))
+                client.CleanProfiles();
+                if (!client.Profiles.Contains(App.CurrentProfile))
                     clientListBox.SelectedIndex = -1;
             }
         }

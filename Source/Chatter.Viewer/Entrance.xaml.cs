@@ -2,7 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Chatter.Viewer.Controls;
-using Mikodev.Links;
+using Mikodev.Links.Annotations;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -49,7 +49,7 @@ namespace Chatter.Viewer
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             dialog.Child = null;
-            var profile = e.AddedItems?.OfType<LinkProfile>()?.FirstOrDefault();
+            var profile = e.AddedItems?.OfType<Profile>()?.FirstOrDefault();
             if (profile == null)
                 return;
             profile.UnreadCount = 0;

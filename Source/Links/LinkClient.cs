@@ -1,10 +1,12 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
+using Mikodev.Links.Annotations;
 using Mikodev.Links.Data.Abstractions;
 using Mikodev.Links.Implementations;
+using Mikodev.Links.Internal;
 using Mikodev.Links.Messages;
-using Mikodev.Links.Messages.Implementations;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -16,11 +18,13 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links
 {
-    public sealed partial class LinkClient : IDisposable, ILinkClient
+    internal sealed partial class LinkClient : Client, IDisposable
     {
         private const int None = 0, Started = 1, Disposed = 2;
 
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
+
+        private readonly LinkProfile profile;
 
         private int status = None;
 
@@ -40,17 +44,17 @@ namespace Mikodev.Links
 
         internal LinkEnvironment Environment { get; }
 
-        public LinkProfile Profile { get; }
+        public override Profile Profile => profile;
 
-        public LinkSettings Settings { get; }
+        public override ILinkSettings Settings { get; }
 
-        public ObservableCollection<LinkProfile> ProfileCollection { get; } = new ObservableCollection<LinkProfile>();
+        public override IEnumerable<Profile> Profiles => Contracts.ProfileCollection;
 
-        public DirectoryInfo ReceiveDirectory => new DirectoryInfo(Environment.ShareDirectory);
+        public override DirectoryInfo ReceivingDirectory => new DirectoryInfo(Environment.ShareDirectory);
 
-        public event EventHandler<MessageEventArgs> NewMessage;
+        public override event EventHandler<MessageEventArgs> NewMessage;
 
-        public LinkClient(LinkSettings settings, ILinkUIContext context, ILinkDataStore store)
+        public LinkClient(ILinkSettings settings, ILinkUIContext context, ILinkDataStore store)
         {
             if (settings is null)
                 throw new ArgumentNullException(nameof(settings));
@@ -58,20 +62,21 @@ namespace Mikodev.Links
                 throw new ArgumentNullException(nameof(context));
             if (store is null)
                 throw new ArgumentNullException(nameof(store));
-            var environment = settings.Environment;
+            var environment = ((LinkSettings)settings).Environment;
             CancellationToken = cancellation.Token;
             UIContext = context;
             DataStore = store;
 
             void ProfileChanged(object sender, PropertyChangedEventArgs e)
             {
-                Debug.Assert(sender == Profile);
+                var profile = this.profile;
+                Debug.Assert(sender == profile);
                 if (e.PropertyName == nameof(LinkProfile.Name))
-                    environment.ClientName = Profile.Name;
+                    environment.ClientName = profile.Name;
                 else if (e.PropertyName == nameof(LinkProfile.Text))
-                    environment.ClientText = Profile.Text;
+                    environment.ClientText = profile.Text;
                 else if (e.PropertyName == nameof(LinkProfile.ImageHash))
-                    environment.ClientImageHash = Profile.ImageHash;
+                    environment.ClientImageHash = profile.ImageHash;
             }
 
             Settings = settings;
@@ -92,15 +97,15 @@ namespace Mikodev.Links
             profile.SetImagePath(exists ? imagePath.FullName : string.Empty);
             profile.SetIPAddress(IPAddress.Loopback);
 
-            Profile = profile;
-            Profile.PropertyChanged += ProfileChanged;
+            this.profile = profile;
+            profile.PropertyChanged += ProfileChanged;
 
             Initial(Network);
             Network.RegisterHandler("link.message.text", HandleTextAsync);
             Network.RegisterHandler("link.message.image-hash", HandleImageAsync);
         }
 
-        public async Task<Task> StartAsync()
+        public override async Task<Task> StartAsync()
         {
             if (Interlocked.CompareExchange(ref status, Started, None) != None)
                 throw new InvalidOperationException();
@@ -116,7 +121,7 @@ namespace Mikodev.Links
             return Task.WhenAll(tasks);
         }
 
-        public void CleanProfileCollection() => Contracts.CleanProfileCollection();
+        public override void CleanProfiles() => Contracts.CleanProfileCollection();
 
         public void Dispose()
         {
@@ -130,46 +135,43 @@ namespace Mikodev.Links
         /// <summary>
         /// 向目标用户发送文本消息, 失败时不抛出异常
         /// </summary>
-        /// <param name="profile">目标用户</param>
-        /// <param name="text">文本信息内容</param>
-        public async Task SendTextAsync(LinkProfile profile, string text)
+        public override async Task SendTextAsync(Profile profile, string text)
         {
             if (profile == null)
                 throw new ArgumentNullException(nameof(profile));
-            var message = new TextMessage() { Text = text, };
-            var packetData = new { messageId = message.Id, text, };
-            await Network.SendAsync(profile, message, "link.message.text", packetData);
+            var message = new TextMessage();
+            message.SetObject(text);
+            var packetData = new { messageId = message.MessageId, text, };
+            await Network.SendAsync((LinkProfile)profile, message, "link.message.text", packetData);
         }
 
         /// <summary>
         /// 向目标用户发送图片消息哈希报文, 在文件 IO 出错时抛出异常, 在网络发送失败时不抛出异常
         /// </summary>
-        /// <param name="profile">目标用户</param>
-        /// <param name="fileInfo">图片路径</param>
-        public async Task SendImageAsync(LinkProfile profile, FileInfo fileInfo)
+        public override async Task SendImageAsync(Profile profile, string file)
         {
-            var result = await Cache.SetCacheAsync(fileInfo, cancellation.Token);
-            var message = new ImageMessage() { ImageHash = result.Hash, ImagePath = result.FileInfo.FullName };
-            var packetData = new { messageId = message.Id, imageHash = result.Hash, };
-            await Network.SendAsync(profile, message, "link.message.image-hash", packetData);
+            var result = await Cache.SetCacheAsync(new FileInfo(file), cancellation.Token);
+            var message = new ImageMessage() { ImageHash = result.Hash };
+            message.SetObject(result.FileInfo.FullName);
+            var packetData = new { messageId = message.MessageId, imageHash = result.Hash, };
+            await Network.SendAsync((LinkProfile)profile, message, "link.message.image-hash", packetData);
         }
 
-        public async Task<string> SetProfileImageAsync(FileInfo fileInfo)
+        public override async Task SetProfileImageAsync(string file)
         {
-            var result = await Cache.SetCacheAsync(fileInfo, cancellation.Token);
-            var profile = Profile;
+            var result = await Cache.SetCacheAsync(new FileInfo(file), cancellation.Token);
+            var profile = this.profile;
             profile.ImageHash = result.Hash;
             profile.SetImagePath(result.FileInfo.FullName);
-            return result.Hash;
         }
 
-        private async Task<bool> ResponseAsync(ILinkRequest parameter, Message message)
+        private async Task<bool> ResponseAsync(ILinkRequest parameter, NotifyMessage message)
         {
             void AppendMessage()
             {
                 var profile = parameter.SenderProfile;
                 var messages = profile.MessageCollection;
-                if (messages.Any(r => r.Id == message.Id))
+                if (messages.Any(r => r.MessageId == message.MessageId))
                     return;
                 messages.Add(message);
                 var eventArgs = new MessageEventArgs(this, profile, message);
@@ -185,12 +187,12 @@ namespace Mikodev.Links
                 await UIContext.InvokeAsync(AppendMessage);
                 var model = new MessageModel
                 {
-                    MessageId = message.Id,
+                    MessageId = message.MessageId,
                     ProfileId = parameter.SenderProfile.ProfileId,
                     DateTime = message.DateTime,
                     Path = message.Path,
                     Reference = message.Reference.ToString(),
-                    Data = message is TextMessage text ? text.Text : ((ImageMessage)message).ImageHash,
+                    Data = (string)message.Object,
                 };
                 _ = Task.Run(() => DataStore.StoreMessagesAsync(new[] { model }));
             }
@@ -202,15 +204,62 @@ namespace Mikodev.Links
         internal async Task HandleTextAsync(ILinkRequest parameter)
         {
             var data = parameter.Packet.Data;
-            var message = new TextMessage(data["messageId"].As<string>()) { Text = data["text"].As<string>(), Status = MessageStatus.Success };
+            var message = new TextMessage(data["messageId"].As<string>());
+            message.SetObject(data["text"].As<string>());
+            message.SetStatus(MessageStatus.Success);
             _ = await ResponseAsync(parameter, message);
+        }
+
+        public override async Task<IEnumerable<Message>> GetMessagesAsync(Profile profile)
+        {
+            static MessageReference AsMessageReference(string reference)
+            {
+                return reference == MessageReference.Remote.ToString()
+                    ? MessageReference.Remote
+                    : reference == MessageReference.Local.ToString() ? MessageReference.Local : MessageReference.None;
+            }
+
+            NotifyMessage Convert(MessageModel item)
+            {
+                if (item.Path == TextMessage.MessagePath)
+                {
+                    var message = new TextMessage(item.MessageId, item.DateTime, AsMessageReference(item.Reference));
+                    message.SetObject(item.Data);
+                    message.SetStatus(MessageStatus.Success);
+                    return message;
+                }
+                else if (item.Path == ImageMessage.MessagePath)
+                {
+                    var message = new ImageMessage(item.MessageId, item.DateTime, AsMessageReference(item.Reference));
+                    var imageHash = item.Data;
+                    message.ImageHash = imageHash;
+                    message.SetStatus(MessageStatus.Success);
+                    if (Cache.TryGetCache(imageHash, out var info))
+                        message.SetObject(info.FullName);
+                    return message;
+                }
+                return default;
+            }
+
+            void Migrate(ObservableCollection<NotifyMessage> collection, IEnumerable<MessageModel> messages)
+            {
+                var list = messages.Where(m => !collection.Any(x => x.MessageId == m.MessageId)).Select(Convert).Where(x => x != null).ToList();
+                list.Reverse();
+                list.ForEach(x => collection.Insert(0, x));
+            }
+
+            var messages = ((LinkProfile)profile).MessageCollection;
+            var list = await DataStore.QueryMessagesAsync(profile.ProfileId, 30);
+            Migrate(messages, list);
+            return messages;
         }
 
         internal async Task HandleImageAsync(ILinkRequest parameter)
         {
             var data = parameter.Packet.Data;
             var imageHash = data["imageHash"].As<string>();
-            var message = new ImageMessage(data["messageId"].As<string>()) { ImageHash = imageHash, Status = MessageStatus.Pending };
+            var message = new ImageMessage(data["messageId"].As<string>()) { ImageHash = imageHash, };
+            message.SetStatus(MessageStatus.Pending);
 
             try
             {
@@ -219,13 +268,13 @@ namespace Mikodev.Links
                 var fileInfo = await Cache.GetCacheAsync(imageHash, parameter.SenderProfile.GetTcpEndPoint(), cancellation.Token);
                 await UIContext.InvokeAsync(() =>
                 {
-                    message.ImagePath = fileInfo.FullName;
-                    message.Status = MessageStatus.Success;
+                    message.SetObject(fileInfo.FullName);
+                    message.SetStatus(MessageStatus.Success);
                 });
             }
             catch (Exception)
             {
-                await UIContext.InvokeAsync(() => message.Status = MessageStatus.Aborted);
+                await UIContext.InvokeAsync(() => message.SetStatus(MessageStatus.Aborted));
                 throw;
             }
         }

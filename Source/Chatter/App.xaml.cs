@@ -1,4 +1,5 @@
 ﻿using Mikodev.Links;
+using Mikodev.Links.Annotations;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,19 +9,19 @@ namespace Chatter
 {
     public partial class App : Application
     {
-        private LinkClient client;
+        private Client client;
 
-        private LinkProfile profile;
+        private Profile profile;
 
         private EventHandler<KeyEventArgs> textboxKeyDown;
 
-        public static LinkClient CurrentClient
+        public static Client CurrentClient
         {
             get => (Current as App)?.client;
             set => ((App)Current).client = value;
         }
 
-        public static LinkProfile CurrentProfile
+        public static Profile CurrentProfile
         {
             get => (Current as App)?.profile;
             set => ((App)Current).profile = value;
@@ -40,7 +41,7 @@ namespace Chatter
 
         protected override void OnExit(ExitEventArgs e)
         {
-            client?.Dispose();
+            (client as IDisposable)?.Dispose();
             base.OnExit(e);
         }
     }

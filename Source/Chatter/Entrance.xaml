@@ -43,7 +43,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <TextBlock x:Name="clientTextBlock" Grid.Row="0" Margin="14,4" Text="All" />
-                    <ListBox x:Name="clientListBox" Grid.Row="1" ItemsSource="{Binding Path=ProfileCollection}"
+                    <ListBox x:Name="clientListBox" Grid.Row="1" ItemsSource="{Binding Path=Profiles}"
                              ItemContainerStyle="{DynamicResource FlattenListBoxItemStyle}"
                              SelectionChanged="ListBox_SelectionChanged">
                         <ListBox.ItemTemplate>

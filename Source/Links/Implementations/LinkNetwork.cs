@@ -1,5 +1,6 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
+using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using Mikodev.Links.Messages;
 using Mikodev.Tasks.Abstractions;
@@ -48,7 +49,7 @@ namespace Mikodev.Links.Implementations
 
         internal async Task InitAsync()
         {
-            var profile = client.Profile;
+            var profile = (LinkProfile)client.Profile;
             var udpEndPoint = environment.UdpEndPoint;
             var tcpEndPoint = environment.TcpEndPoint;
 
@@ -240,9 +241,9 @@ namespace Mikodev.Links.Implementations
             return udpClient.SendAsync(buffer, buffer.Length, endpoint);
         }
 
-        public async Task SendAsync(LinkProfile profile, Message message, string path, object packetData)
+        public async Task SendAsync(LinkProfile profile, NotifyMessage message, string path, object packetData)
         {
-            message.Status = MessageStatus.Pending;
+            message.SetStatus(MessageStatus.Pending);
             profile.MessageCollection.Add(message);
 
             bool Handled(Token token)
@@ -253,7 +254,7 @@ namespace Mikodev.Links.Implementations
                     : status == "refused" ? MessageStatus.Refused : default;
                 if (flag == default)
                     return false;
-                message.Status = flag;
+                message.SetStatus(flag);
                 return true;
             }
 
@@ -300,7 +301,7 @@ namespace Mikodev.Links.Implementations
                 tcp?.Dispose();
             }
 
-            message.Status = MessageStatus.Aborted;
+            message.SetStatus(MessageStatus.Aborted);
         }
 
         public void Dispose()

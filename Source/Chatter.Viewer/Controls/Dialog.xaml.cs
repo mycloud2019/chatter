@@ -2,12 +2,12 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
-using Mikodev.Links;
-using Mikodev.Links.Messages;
+using Mikodev.Links.Annotations;
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Threading.Tasks;
 
 namespace Chatter.Viewer.Controls
@@ -18,9 +18,9 @@ namespace Chatter.Viewer.Controls
 
         private readonly TextBox textbox;
 
-        private LinkProfile profile;
+        private Profile profile;
 
-        private ObservableCollection<Message> messages;
+        private IEnumerable<Message> messages;
 
         public Dialog()
         {
@@ -32,19 +32,22 @@ namespace Chatter.Viewer.Controls
             this.FindControl<Button>("post").Click += (s, e) => PostText();
         }
 
-        private void UserControl_AttachedToVisualTree(object sender, VisualTreeAttachmentEventArgs e)
+        private async void UserControl_AttachedToVisualTree(object sender, VisualTreeAttachmentEventArgs e)
         {
+            this.IsEnabled = false;
+            using var _0 = Disposable.Create(() => this.IsEnabled = true);
+
             this.profile = App.CurrentProfile;
-            this.messages = profile.MessageCollection;
+            this.messages = await App.CurrentClient.GetMessagesAsync(this.profile);
             this.DataContext = profile;
             listbox.Items = messages;
             textbox.KeyDown += this.TextBox_KeyDown;
-            messages.CollectionChanged += this.ObservableCollection_CollectionChanged;
+            ((INotifyCollectionChanged)this.messages).CollectionChanged += this.ObservableCollection_CollectionChanged;
         }
 
         private void UserControl_DetachedFromVisualTree(object sender, VisualTreeAttachmentEventArgs e)
         {
-            messages.CollectionChanged -= this.ObservableCollection_CollectionChanged;
+            ((INotifyCollectionChanged)this.messages).CollectionChanged -= this.ObservableCollection_CollectionChanged;
             textbox.KeyDown -= this.TextBox_KeyDown;
             listbox.Items = null;
             this.DataContext = null;

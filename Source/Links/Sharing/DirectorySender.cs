@@ -1,11 +1,12 @@
-﻿using System.IO;
+﻿using Mikodev.Links.Annotations;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Mikodev.Links.Sharing
 {
     public sealed class DirectorySender : DirectoryObject
     {
-        public DirectorySender(LinkClient client, LinkProfile profile, Stream stream, string fullPath) : base(client, profile, stream)
+        public DirectorySender(Client client, Profile profile, Stream stream, string fullPath) : base(client, profile, stream)
         {
             Name = Path.GetDirectoryName(fullPath);
             FullName = fullPath;

@@ -3,6 +3,7 @@ using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,6 +21,8 @@ namespace Mikodev.Links
 
         private readonly Dictionary<string, LinkProfile> profiles = new Dictionary<string, LinkProfile>();
 
+        public ObservableCollection<LinkProfile> ProfileCollection { get; } = new ObservableCollection<LinkProfile>();
+
         internal LinkContracts(LinkClient client)
         {
             this.client = client;
@@ -36,7 +39,7 @@ namespace Mikodev.Links
         {
             client.UIContext.VerifyAccess();
 
-            var collection = client.ProfileCollection;
+            var collection = ProfileCollection;
 
             static bool NotOnline(LinkProfile profile) => profile.OnlineStatus != ProfileOnlineStatus.Online;
 
@@ -93,7 +96,7 @@ namespace Mikodev.Links
 
         private async Task BroadcastLoopAsync()
         {
-            var profile = client.Profile;
+            var profile = (LinkProfile)client.Profile;
             var network = client.Network;
             var token = client.CancellationToken;
 
@@ -140,7 +143,7 @@ namespace Mikodev.Links
                 profile.RemoteImageHash = imageHash;
 
                 if (instance != null)
-                    client.ProfileCollection.Add(profile);
+                    ProfileCollection.Add(profile);
             });
         }
     }

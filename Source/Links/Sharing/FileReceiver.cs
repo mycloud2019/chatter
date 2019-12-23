@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Links.Annotations;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -8,7 +9,7 @@ namespace Mikodev.Links.Sharing
     {
         private readonly TaskCompletionSource<bool> completion = new TaskCompletionSource<bool>();
 
-        public FileReceiver(LinkClient client, LinkProfile profile, Stream stream, string name, long length) : base(client, profile, stream, length)
+        public FileReceiver(Client client, Profile profile, Stream stream, string name, long length) : base(client, profile, stream, length)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             FullName = name;

@@ -1,4 +1,4 @@
-﻿using Mikodev.Links.Messages;
+﻿using Mikodev.Links.Annotations;
 using System;
 using System.Globalization;
 using System.Windows.Data;

@@ -22,7 +22,7 @@ namespace Chatter.Viewer
 
         private static readonly string settingsPath = $"{nameof(Chatter)}.settings.json";
 
-        private LinkClient client = null;
+        private Client client = null;
 
         public Cover()
         {
@@ -48,13 +48,13 @@ namespace Chatter.Viewer
 
             var exists = File.Exists(settingsPath);
             var result = exists
-                ? await TryAsync(() => LinkSettings.LoadAsync(settingsPath))
-                : Ok<LinkSettings, Exception>(default);
+                ? await TryAsync(() => LinkFactory.CreateSettingsAsync(settingsPath))
+                : Ok<ILinkSettings, Exception>(default);
             if (exists && result.IsError())
                 await Notice.ShowDialog(this, result.UnwrapError().Message, "Error");
             var store = new SqliteDataStore($"{nameof(Chatter)}.db");
             var context = new SynchronizationUIContext(Dispatcher.UIThread);
-            client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), context, store);
+            client = LinkFactory.CreateClient(result.UnwrapOrDefault() ?? LinkFactory.CreateSettings(), context, store);
             client.Profile.Name = string.Concat(Environment.UserName, "@", Environment.MachineName);
             DataContext = client.Profile;
         }
@@ -93,7 +93,7 @@ namespace Chatter.Viewer
                 var result = target.FirstOrDefault();
                 if (string.IsNullOrEmpty(result))
                     return;
-                _ = await TryAsync(() => client.SetProfileImageAsync(new FileInfo(result)));
+                _ = await TryAsync(() => client.SetProfileImageAsync(result));
             }
         }
     }

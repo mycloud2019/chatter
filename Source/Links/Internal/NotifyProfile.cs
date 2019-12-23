@@ -3,9 +3,9 @@ using System.ComponentModel;
 using System.Net;
 using System.Runtime.CompilerServices;
 
-namespace Mikodev.Links
+namespace Mikodev.Links.Internal
 {
-    public abstract class NotifyProfile : Profile, INotifyPropertyChanging, INotifyPropertyChanged
+    internal abstract class NotifyProfile : Profile, INotifyPropertyChanging, INotifyPropertyChanged
     {
         private string name;
 

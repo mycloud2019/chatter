@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links
 {
-    public sealed class LinkSettings
+    internal sealed class LinkSettings : ILinkSettings
     {
         internal LinkEnvironment Environment { get; private set; }
 

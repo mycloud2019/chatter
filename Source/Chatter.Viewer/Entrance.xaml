@@ -17,7 +17,7 @@
             <Grid Grid.Row="3">
                 <Grid RowDefinitions="Auto *">
                     <TextBlock Grid.Row="0" Margin="14,4" Text="All" />
-                    <ListBox Name="listbox" Grid.Row="1" Items="{Binding Path=ProfileCollection}">
+                    <ListBox Name="listbox" Grid.Row="1" Items="{Binding Path=Profiles}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <local:ProfileElement Margin="14,0" />

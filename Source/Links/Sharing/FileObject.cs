@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Links.Annotations;
+using System;
 using System.IO;
 
 namespace Mikodev.Links.Sharing
@@ -23,7 +24,7 @@ namespace Mikodev.Links.Sharing
             set => OnPropertyChange(ref remaining, value);
         }
 
-        protected FileObject(LinkClient client, LinkProfile profile, Stream stream, long length) : base(client, profile, stream)
+        protected FileObject(Client client, Profile profile, Stream stream, long length) : base(client, profile, stream)
         {
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length));

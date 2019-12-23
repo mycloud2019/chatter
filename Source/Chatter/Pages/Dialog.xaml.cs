@@ -1,14 +1,14 @@
 ﻿using Chatter.Internal;
 using Chatter.Windows;
-using Mikodev.Links;
-using Mikodev.Links.Messages;
+using Mikodev.Links.Annotations;
 using Mikodev.Optional;
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -18,9 +18,9 @@ namespace Chatter.Pages
 {
     public partial class Dialog : Page
     {
-        private readonly LinkProfile profile;
+        private readonly Profile profile;
 
-        private ObservableCollection<Message> messages;
+        private IEnumerable<Message> messages;
 
         private ScrollViewer scrollViewer;
 
@@ -33,15 +33,18 @@ namespace Chatter.Pages
             Unloaded += Page_Unloaded;
         }
 
-        private void Page_Loaded(object sender, RoutedEventArgs e)
+        private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
+            this.IsEnabled = false;
+            using var _0 = Disposable.Create(() => this.IsEnabled = true);
+
             Debug.Assert(profile.UnreadCount == 0);
             App.TextBoxKeyDown += TextBox_KeyDown;
 
             scrollViewer = listbox.FindChild<ScrollViewer>(string.Empty);
             Debug.Assert(scrollViewer != null);
-            messages = profile.MessageCollection;
-            messages.CollectionChanged += ObservableCollection_CollectionChanged;
+            messages = await App.CurrentClient.GetMessagesAsync(profile);
+            ((INotifyCollectionChanged)messages).CollectionChanged += ObservableCollection_CollectionChanged;
             listbox.ItemsSource = messages;
             scrollViewer.ScrollToBottom();
         }
@@ -50,7 +53,7 @@ namespace Chatter.Pages
         {
             listbox.ItemsSource = null;
             App.TextBoxKeyDown -= TextBox_KeyDown;
-            messages.CollectionChanged -= ObservableCollection_CollectionChanged;
+            ((INotifyCollectionChanged)messages).CollectionChanged -= ObservableCollection_CollectionChanged;
         }
 
         private void SendText()
@@ -114,7 +117,7 @@ namespace Chatter.Pages
             {
                 if (!new[] { ".JPG", ".PNG", ".BMP" }.Contains(Path.GetExtension(path).ToUpper()))
                     _ = await TryAsync(client.SendFileAsync(profile, path, x => new FileWindow(x).Show()));
-                else if ((await TryAsync(() => client.SendImageAsync(profile, new FileInfo(path)))) is var result && result.IsError())
+                else if ((await TryAsync(() => client.SendImageAsync(profile, path))) is var result && result.IsError())
                     _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

@@ -1,4 +1,5 @@
 ﻿using Mikodev.Binary;
+using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -9,7 +10,7 @@ namespace Mikodev.Links.Sharing
 {
     public abstract class DirectoryObject : ShareObject
     {
-        protected DirectoryObject(LinkClient client, LinkProfile profile, Stream stream) : base(client, profile, stream)
+        protected DirectoryObject(Client client, Profile profile, Stream stream) : base(client, profile, stream)
         {
             // nothing
         }

@@ -4,8 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Mikodev.Links.Messages;
-using Mikodev.Links.Messages.Implementations;
+using Mikodev.Links.Annotations;
 using Mikodev.Optional;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -41,11 +40,11 @@ namespace Chatter.Viewer.Controls
             Debug.Assert(message is null);
             message = (Message)DataContext;
             Debug.Assert(message != null);
-            message.PropertyChanged += this.Message_PropertyChanged;
-            if (message is TextMessage text)
-                border.Child = new TextBox { IsReadOnly = true, Padding = new Thickness(8), Text = text.Text, Background = Brushes.Transparent, BorderThickness = new Thickness(0), };
-            else if (message is ImageMessage image)
-                border.Child = LoadImageElement(image.ImagePath);
+            ((INotifyPropertyChanged)message).PropertyChanged += this.Message_PropertyChanged;
+            if (message.Path == "message.text")
+                border.Child = new TextBox { IsReadOnly = true, Padding = new Thickness(8), Text = (string)message.Object, Background = Brushes.Transparent, BorderThickness = new Thickness(0), };
+            else if (message.Path == "message.image-hash")
+                border.Child = LoadImageElement((string)message.Object);
             const int space = 48;
             var local = message.Reference == MessageReference.Local;
             grid.HorizontalAlignment = local ? HorizontalAlignment.Right : HorizontalAlignment.Left;
@@ -57,14 +56,14 @@ namespace Chatter.Viewer.Controls
         {
             if (message is null)
                 return;
-            message.PropertyChanged -= this.Message_PropertyChanged;
+            ((INotifyPropertyChanged)message).PropertyChanged -= this.Message_PropertyChanged;
             message = null;
         }
 
         private void Message_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (message is ImageMessage image && e.PropertyName == nameof(ImageMessage.ImagePath))
-                border.Child = LoadImageElement(image.ImagePath);
+            if (message.Path == "message.image-hash" && e.PropertyName == nameof(Message.Object))
+                border.Child = LoadImageElement((string)message.Object);
         }
 
         private IControl LoadImageElement(string path)

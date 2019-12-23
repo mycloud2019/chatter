@@ -25,6 +25,7 @@ namespace Mikodev.Links.Data
             _ = await context.Database.EnsureCreatedAsync();
             var query = context.Messages.Where(x => x.ProfileId == profileId).OrderByDescending(x => x.DateTime).Take(count);
             var messages = await query.ToListAsync();
+            messages.Reverse();
             return messages;
         }
 

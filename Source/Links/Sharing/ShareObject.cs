@@ -1,4 +1,5 @@
 ﻿using Mikodev.Binary;
+using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using Mikodev.Optional;
 using System;
@@ -31,6 +32,8 @@ namespace Mikodev.Links.Sharing
 
         private readonly List<Tick> ticks = new List<Tick>();
 
+        private readonly LinkClient client;
+
         private int interStatus = None;
 
         private string name;
@@ -46,9 +49,7 @@ namespace Mikodev.Links.Sharing
         private ShareStatus shareStatus = ShareStatus.Pending;
         #endregion
 
-        public LinkClient Client { get; }
-
-        public LinkProfile Profile { get; }
+        public Profile Profile { get; }
 
         public string Name
         {
@@ -101,21 +102,21 @@ namespace Mikodev.Links.Sharing
 
         protected CancellationToken CancellationToken { get; }
 
-        internal IGenerator Generator => Client.Generator;
+        internal IGenerator Generator => client.Generator;
 
-        internal LinkEnvironment Environment => Client.Environment;
+        internal LinkEnvironment Environment => client.Environment;
 
-        protected ShareObject(LinkClient client, LinkProfile profile, Stream stream)
+        protected ShareObject(Client client, Profile profile, Stream stream)
         {
             CancellationToken = cancellation.Token;
-            Client = client ?? throw new ArgumentNullException(nameof(client));
+            this.client = (LinkClient)client ?? throw new ArgumentNullException(nameof(client));
             Profile = profile ?? throw new ArgumentNullException(nameof(profile));
             Stream = stream ?? throw new ArgumentNullException(nameof(stream));
         }
 
         protected async Task SetStatus(ShareStatus status)
         {
-            await Client.UIContext.InvokeAsync(() =>
+            await client.UIContext.InvokeAsync(() =>
             {
                 Debug.Assert((Status & ShareStatus.Completed) == 0);
                 if (status == ShareStatus.Running)
@@ -143,14 +144,14 @@ namespace Mikodev.Links.Sharing
 
             do
             {
-                await Client.UIContext.InvokeAsync(Report);
+                await client.UIContext.InvokeAsync(Report);
             }
             while (await Task.WhenAny(invoke, Task.Delay(updateDelay, CancellationToken)) != invoke);
 
             var result = await TryAsync(invoke);
             var status = result.IsOk() ? ShareStatus.Success : ShareStatus.Aborted;
-            await Client.UIContext.InvokeAsync(() => { if ((Status & ShareStatus.Completed) == 0) Status = status; });
-            await Client.UIContext.InvokeAsync(Report);
+            await client.UIContext.InvokeAsync(() => { if ((Status & ShareStatus.Completed) == 0) Status = status; });
+            await client.UIContext.InvokeAsync(Report);
         }
 
         private async Task SendAsync()
@@ -178,8 +179,8 @@ namespace Mikodev.Links.Sharing
             if (accept)
             {
                 var (name, path) = FindAvailableName();
-                await Client.UIContext.InvokeAsync(() => Name = name);
-                await Client.UIContext.InvokeAsync(() => FullName = path);
+                await client.UIContext.InvokeAsync(() => Name = name);
+                await client.UIContext.InvokeAsync(() => FullName = path);
                 await SetStatus(ShareStatus.Running);
                 await InvokeAsync();
             }

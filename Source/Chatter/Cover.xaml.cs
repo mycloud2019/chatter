@@ -19,7 +19,7 @@ namespace Chatter
 
         private static readonly string SettingsPath = $"{nameof(Chatter)}.settings.json";
 
-        private LinkClient client;
+        private Client client;
 
         public Cover()
         {
@@ -29,17 +29,17 @@ namespace Chatter
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            static async Task<LinkClient> CreateClient()
+            static async Task<Client> CreateClient()
             {
                 var exists = File.Exists(SettingsPath);
                 var result = exists
-                    ? await TryAsync(() => LinkSettings.LoadAsync(SettingsPath))
-                    : Ok<LinkSettings, Exception>(default);
+                    ? await TryAsync(() => LinkFactory.CreateSettingsAsync(SettingsPath))
+                    : Ok<ILinkSettings, Exception>(default);
                 if (exists && result.IsError())
                     _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 var store = new SqliteDataStore($"{nameof(Chatter)}.db");
                 var context = new SynchronizationUIContext(TaskScheduler.FromCurrentSynchronizationContext(), Application.Current.Dispatcher);
-                var client = new LinkClient(result.UnwrapOrDefault() ?? LinkSettings.Create(), context, store);
+                var client = LinkFactory.CreateClient(result.UnwrapOrDefault() ?? LinkFactory.CreateSettings(), context, store);
                 if (exists == false || result.IsError())
                     client.Profile.Name = $"{Environment.UserName}@{Environment.MachineName}";
                 return client;
@@ -54,7 +54,7 @@ namespace Chatter
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            static async Task SaveSettings(LinkSettings settings)
+            static async Task SaveSettings(ILinkSettings settings)
             {
                 var result = await TryAsync(() => settings.SaveAsync(SettingsPath));
                 if (result.IsOk())
@@ -62,7 +62,7 @@ namespace Chatter
                 _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-            static async Task<bool> StartClient(LinkClient client)
+            static async Task<bool> StartClient(Client client)
             {
                 var result = await TryAsync(() => client.StartAsync());
                 if (result.IsError())
@@ -90,7 +90,7 @@ namespace Chatter
             {
                 var dialog = new Microsoft.Win32.OpenFileDialog() { Filter = ImageFileFilter };
                 if (dialog.ShowDialog(this) == true)
-                    _ = await TryAsync(() => client.SetProfileImageAsync(new FileInfo(dialog.FileName)));
+                    _ = await TryAsync(() => client.SetProfileImageAsync(dialog.FileName));
             }
         }
     }

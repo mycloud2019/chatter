@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace Mikodev.Links
+namespace Mikodev.Links.Internal
 {
-    public static class NotifyPropertyHelper
+    internal static class NotifyPropertyHelper
     {
         public static void NotifyProperty<T>(object sender, PropertyChangingEventHandler changing, PropertyChangedEventHandler changed, ref T location, T value, string property)
         {

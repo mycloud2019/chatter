@@ -3,10 +3,12 @@ using System;
 using System.Collections.ObjectModel;
 using System.Net;
 
-namespace Mikodev.Links
+namespace Mikodev.Links.Internal
 {
-    public sealed class LinkProfile : NotifyProfile
+    internal sealed class LinkProfile : NotifyProfile
     {
+        private string imageHash;
+
         public LinkProfileType ProfileType { get; }
 
         public DateTime LastOnlineDateTime { get; set; }
@@ -15,11 +17,11 @@ namespace Mikodev.Links
 
         public int UdpPort { get; set; }
 
-        public string ImageHash { get; set; }
+        public string ImageHash { get => imageHash; set => NotifyProperty(ref this.imageHash, value); }
 
         public string RemoteImageHash { get; set; }
 
-        public ObservableCollection<Message> MessageCollection { get; } = new ObservableCollection<Message>();
+        public ObservableCollection<NotifyMessage> MessageCollection { get; } = new ObservableCollection<NotifyMessage>();
 
         public IPEndPoint GetTcpEndPoint() => new IPEndPoint(IPAddress, TcpPort);
 

@@ -49,7 +49,7 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="UserControl">
                             <Border Background="LightBlue">
-                                <TextBox Text="{Binding Path=Text, Mode=OneTime}" Style="{StaticResource FlattenReadOnlyTextBoxStyle}" />
+                                <TextBox Text="{Binding Path=Object, Mode=OneTime}" Style="{StaticResource FlattenReadOnlyTextBoxStyle}" />
                             </Border>
                         </ControlTemplate>
                     </Setter.Value>
@@ -61,7 +61,7 @@
                         <ControlTemplate TargetType="UserControl">
                             <Image MaxHeight="512" MaxWidth="512"
                                    RenderOptions.BitmapScalingMode="HighQuality"
-                                   Source="{Binding Path=ImagePath}">
+                                   Source="{Binding Path=Object}">
                                 <Image.Effect>
                                     <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.5" />
                                 </Image.Effect>
