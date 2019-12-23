@@ -20,6 +20,8 @@ namespace Mikodev.Links.Abstractions
 
         ISettings Settings { get; }
 
+        void Start();
+
         void CleanProfiles();
 
         Task<IEnumerable<Message>> GetMessagesAsync(Profile profile);
@@ -33,7 +35,5 @@ namespace Mikodev.Links.Abstractions
         Task PutDirectoryAsync(Profile profile, string directory, SharingHandler<ISharingDirectorySender> handler);
 
         Task SetProfileImageAsync(string file);
-
-        Task<Task> StartAsync();
     }
 }

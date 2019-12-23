@@ -80,7 +80,7 @@ namespace Chatter.Viewer
                 var source = await TryAsync(() => settings.SaveAsync(settingsPath));
                 if (source.IsError())
                     await Notice.ShowDialog(this, source.UnwrapError().Message, "Error");
-                var result = await TryAsync(() => client.StartAsync());
+                var result = Try(() => client.Start());
                 if (result.IsError())
                     await Notice.ShowDialog(this, result.UnwrapError().Message, "Error");
                 else

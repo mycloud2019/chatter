@@ -64,9 +64,9 @@ namespace Chatter
                 _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-            static async Task<bool> StartClient(IClient client)
+            static bool StartClient(IClient client)
             {
-                var result = await TryAsync(() => client.StartAsync());
+                var result = Try(() => client.Start());
                 if (result.IsError())
                     _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return result.IsOk();
@@ -84,7 +84,7 @@ namespace Chatter
                 var isnull = App.CurrentClient is null;
                 App.CurrentClient = client;
                 await SaveSettings(client.Settings);
-                if (isnull && await StartClient(client))
+                if (isnull && StartClient(client))
                     new Entrance().Show();
                 Close();
             }
