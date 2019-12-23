@@ -18,11 +18,11 @@ namespace Mikodev.Links.Abstractions
 
         string ReceivingDirectory { get; }
 
-        ISettings Settings { get; }
-
-        void Start();
-
         void CleanProfiles();
+
+        Task StartAsync();
+
+        Task WriteSettingsAsync(string file);
 
         Task<IEnumerable<Message>> GetMessagesAsync(Profile profile);
 

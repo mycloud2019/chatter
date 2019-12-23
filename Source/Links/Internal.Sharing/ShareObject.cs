@@ -40,7 +40,7 @@ namespace Mikodev.Links.Internal.Sharing
 
         internal IGenerator Generator => client.Generator;
 
-        internal Configurations Environment => client.Environment;
+        internal Configurations Configurations => client.Configurations;
 
         public SharingViewer Viewer => viewer;
 
@@ -91,7 +91,7 @@ namespace Mikodev.Links.Internal.Sharing
 
         private async Task PutAsync()
         {
-            var buffer = await Stream.ReadBlockWithHeaderAsync(Environment.TcpBufferLimits, CancellationToken);
+            var buffer = await Stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
             var data = new Token(Generator, buffer);
             var dictionary = (IReadOnlyDictionary<string, Token>)data;
             var result = dictionary.TryGetValue("status", out var item) ? item.As<string>() : null;
@@ -127,7 +127,7 @@ namespace Mikodev.Links.Internal.Sharing
 
         private (string name, string fullName) FindAvailableName()
         {
-            var container = new DirectoryInfo(Environment.ShareDirectory);
+            var container = new DirectoryInfo(Configurations.ShareDirectory);
             if (container.Exists == false)
                 container.Create();
             var name = Viewer.Name;
@@ -168,7 +168,7 @@ namespace Mikodev.Links.Internal.Sharing
         protected async Task PutFileAsync(string path, long length)
         {
             var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            var buffer = new byte[Environment.TcpBufferLength];
+            var buffer = new byte[Configurations.TcpBufferLength];
 
             try
             {
@@ -194,7 +194,7 @@ namespace Mikodev.Links.Internal.Sharing
             if (length < 0)
                 throw new IOException("Invalid file length!");
             var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
-            var buffer = new byte[Environment.TcpBufferLength];
+            var buffer = new byte[Configurations.TcpBufferLength];
 
             try
             {

@@ -1,4 +1,5 @@
 ﻿using Chatter.Implementations;
+using Chatter.Internal;
 using Mikodev.Links;
 using Mikodev.Links.Abstractions;
 using Mikodev.Links.Data;
@@ -30,20 +31,18 @@ namespace Chatter
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            static async Task<IClient> CreateClient()
+            async Task<IClient> CreateClient()
             {
                 var exists = File.Exists(SettingsPath);
-                var result = exists
-                    ? await TryAsync(() => LinkFactory.CreateSettingsAsync(SettingsPath))
-                    : Ok<ISettings, Exception>(default);
-                if (exists && result.IsError())
-                    _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                var store = new SqliteStorage($"{nameof(Chatter)}.db");
-                await store.InitializeAsync();
-                var context = new SynchronizationDispatcher(TaskScheduler.FromCurrentSynchronizationContext(), Application.Current.Dispatcher);
-                var client = LinkFactory.CreateClient(result.UnwrapOrDefault() ?? LinkFactory.CreateSettings(), context, store);
-                if (exists == false || result.IsError())
+                var settingsFile = exists ? Some(SettingsPath) : None<string>();
+                var storage = new SqliteStorage($"{nameof(Chatter)}.db");
+                var dispatcher = new SynchronizationDispatcher(TaskScheduler.FromCurrentSynchronizationContext(), Application.Current.Dispatcher);
+                var result = await TryAsync(() => LinkFactory.CreateClientAsync(dispatcher, storage, settingsFile)).NoticeOnErrorAsync();
+                var client = result.UnwrapOrDefault();
+                if (exists == false && client != null)
                     client.Profile.Name = $"{Environment.UserName}@{Environment.MachineName}";
+                if (result.IsError())
+                    Application.Current.Shutdown();
                 return client;
             }
 
@@ -51,27 +50,11 @@ namespace Chatter
             using var _0 = Disposable.Create(() => this.IsEnabled = true);
 
             client = App.CurrentClient ?? await CreateClient();
-            DataContext = client.Profile;
+            DataContext = client?.Profile;
         }
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            static async Task SaveSettings(ISettings settings)
-            {
-                var result = await TryAsync(() => settings.SaveAsync(SettingsPath));
-                if (result.IsOk())
-                    return;
-                _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            static bool StartClient(IClient client)
-            {
-                var result = Try(() => client.Start());
-                if (result.IsError())
-                    _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return result.IsOk();
-            }
-
             Debug.Assert(client != null);
             var button = (Button)e.OriginalSource;
             var tag = button.Tag as string;
@@ -83,8 +66,8 @@ namespace Chatter
             {
                 var isnull = App.CurrentClient is null;
                 App.CurrentClient = client;
-                await SaveSettings(client.Settings);
-                if (isnull && StartClient(client))
+                _ = await TryAsync(() => client.WriteSettingsAsync(SettingsPath)).NoticeOnErrorAsync();
+                if (isnull && (await TryAsync(() => client.StartAsync()).NoticeOnErrorAsync()).IsOk())
                     new Entrance().Show();
                 Close();
             }

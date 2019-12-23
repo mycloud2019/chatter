@@ -1,19 +1,18 @@
-﻿using Mikodev.Links.Abstractions;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Mikodev.Links.Internal
 {
-    internal sealed class Settings : ISettings
+    internal sealed class Settings
     {
-        internal Configurations Environment { get; private set; }
+        internal Configurations Configurations { get; private set; }
 
-        internal Settings(Configurations environment)
+        internal Settings(Configurations configurations)
         {
-            Debug.Assert(environment != null);
-            Environment = environment;
+            Debug.Assert(configurations != null);
+            Configurations = configurations;
         }
 
         public static Settings Create() => new Settings(new Configurations());
@@ -23,9 +22,9 @@ namespace Mikodev.Links.Internal
             var buffer = new char[Configurations.SettingsMaximumCharacters];
             var length = await reader.ReadBlockAsync(buffer, 0, buffer.Length).TimeoutAfter(Configurations.SettingsIOTimeout);
             var text = new string(buffer, 0, length);
-            var environment = new Configurations();
-            environment.Load(text);
-            return new Settings(environment);
+            var configurations = new Configurations();
+            configurations.Load(text);
+            return new Settings(configurations);
         }
 
         public static async Task<Settings> LoadAsync(string path)
@@ -37,7 +36,7 @@ namespace Mikodev.Links.Internal
 
         public async Task SaveAsync(TextWriter writer)
         {
-            var item = Environment;
+            var item = Configurations;
             var text = item.Save();
             await writer.WriteAsync(text).TimeoutAfter(Configurations.SettingsIOTimeout);
         }

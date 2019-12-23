@@ -32,7 +32,7 @@ namespace Mikodev.Links.Internal
             var packet = new { name = fileInfo.Name, length };
             _ = await Network.ConnectAsync("link.share.file", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
             {
-                var result = await stream.ReadBlockWithHeaderAsync(Environment.TcpBufferLimits, CancellationToken);
+                var result = await stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
                 var data = new Token(Generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new NetworkException(NetworkError.InvalidData);
@@ -55,7 +55,7 @@ namespace Mikodev.Links.Internal
             var packet = new { name = directoryInfo.Name };
             _ = await Network.ConnectAsync("link.share.directory", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
             {
-                var result = await stream.ReadBlockWithHeaderAsync(Environment.TcpBufferLimits, CancellationToken);
+                var result = await stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
                 var data = new Token(Generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new NetworkException(NetworkError.InvalidData);

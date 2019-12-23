@@ -24,6 +24,8 @@ namespace Mikodev.Links.Internal
 
         private readonly ContractProfile profile;
 
+        private readonly Settings settings;
+
         private int status = None;
 
         internal CancellationToken CancellationToken { get; }
@@ -40,19 +42,17 @@ namespace Mikodev.Links.Internal
 
         internal Contracts Contracts { get; }
 
-        internal Configurations Environment { get; }
+        internal Configurations Configurations { get; }
 
         public Profile Profile => profile;
 
-        public ISettings Settings { get; }
-
         public IEnumerable<Profile> Profiles => Contracts.ProfileCollection;
 
-        public string ReceivingDirectory => Environment.ShareDirectory;
+        public string ReceivingDirectory => Configurations.ShareDirectory;
 
         public event EventHandler<MessageEventArgs> NewMessage;
 
-        public Client(ISettings settings, IDispatcher dispatcher, IStorage storage)
+        public Client(Settings settings, IDispatcher dispatcher, IStorage storage)
         {
             if (settings is null)
                 throw new ArgumentNullException(nameof(settings));
@@ -60,7 +60,7 @@ namespace Mikodev.Links.Internal
                 throw new ArgumentNullException(nameof(dispatcher));
             if (storage is null)
                 throw new ArgumentNullException(nameof(storage));
-            var environment = ((Settings)settings).Environment;
+            var environment = ((Settings)settings).Configurations;
             CancellationToken = cancellation.Token;
             Dispatcher = dispatcher;
             Storage = storage;
@@ -77,11 +77,11 @@ namespace Mikodev.Links.Internal
                     environment.ClientImageHash = profile.ImageHash;
             }
 
-            Settings = settings;
-            Environment = environment;
+            this.settings = settings;
+            Configurations = environment;
             Network = new Network(this);
             Contracts = new Contracts(this);
-            Cache = new Cache(Environment, Network);
+            Cache = new Cache(Configurations, Network);
 
             var imageHash = environment.ClientImageHash;
             var imagePath = default(FileInfo);
@@ -105,10 +105,11 @@ namespace Mikodev.Links.Internal
             Network.RegisterHandler("link.message.image-hash", HandleImageAsync);
         }
 
-        public void Start()
+        public async Task StartAsync()
         {
             if (Interlocked.CompareExchange(ref status, Started, None) != None)
                 throw new InvalidOperationException();
+            await Task.Yield();
             var network = (Network)Network;
             var manager = Contracts;
             network.Initialize();
@@ -117,6 +118,8 @@ namespace Mikodev.Links.Internal
         }
 
         public void CleanProfiles() => Contracts.CleanProfileCollection();
+
+        public Task WriteSettingsAsync(string file) => settings.SaveAsync(file);
 
         public void Dispose()
         {

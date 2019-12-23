@@ -44,7 +44,7 @@ namespace Mikodev.Links.Internal.Sharing
 
             while (true)
             {
-                var data = await Stream.ReadBlockWithHeaderAsync(Environment.TcpBufferLimits, CancellationToken);
+                var data = await Stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
                 var token = new Token(Generator, data);
                 var type = token["type"].As<string>();
 

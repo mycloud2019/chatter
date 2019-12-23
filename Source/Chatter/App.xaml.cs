@@ -41,7 +41,7 @@ namespace Chatter
                 if (e.Exception is Exception exception)
                     _ = MessageBox.Show(exception.Message, "Critical Error!", MessageBoxButton.OK, MessageBoxImage.Error);
                 e.Handled = true;
-                Shutdown();
+                this.Shutdown();
             };
         }
 

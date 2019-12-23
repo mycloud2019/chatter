@@ -1,7 +1,6 @@
 ﻿using Chatter.Internal;
 using Chatter.Windows;
 using Mikodev.Links.Abstractions;
-using Mikodev.Optional;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -117,8 +116,8 @@ namespace Chatter.Pages
             {
                 if (!new[] { ".JPG", ".PNG", ".BMP" }.Contains(Path.GetExtension(path).ToUpper()))
                     _ = await TryAsync(client.PutFileAsync(profile, path, x => new FileWindow(x).Show()));
-                else if ((await TryAsync(() => client.PutImageAsync(profile, path))) is var result && result.IsError())
-                    _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                else
+                    _ = await TryAsync(() => client.PutImageAsync(profile, path)).NoticeOnErrorAsync();
             }
         }
     }

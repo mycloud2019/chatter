@@ -13,7 +13,7 @@ namespace Mikodev.Links.Internal
     {
         private readonly Client client;
 
-        private readonly Configurations environment;
+        private readonly Configurations configurations;
 
         private readonly object locker = new object();
 
@@ -24,9 +24,9 @@ namespace Mikodev.Links.Internal
         internal Contracts(Client client)
         {
             this.client = client;
-            environment = client.Environment;
+            configurations = client.Configurations;
             var network = client.Network;
-            Debug.Assert(environment != null);
+            Debug.Assert(configurations != null);
             Debug.Assert(network != null);
             network.RegisterHandler("link.broadcast", HandleBroadcastAsync);
         }
@@ -65,7 +65,7 @@ namespace Mikodev.Links.Internal
             int UpdateStatus(ContractProfile profile)
             {
                 var span = DateTime.Now - profile.LastOnlineDateTime;
-                if (span < TimeSpan.Zero || span > environment.ProfileOnlineTimeout)
+                if (span < TimeSpan.Zero || span > configurations.ProfileOnlineTimeout)
                     profile.SetOnlineStatus(ProfileOnlineStatus.Offline);
                 var imageHash = profile.RemoteImageHash;
                 if (!string.IsNullOrEmpty(imageHash) && imageHash != profile.ImageHash)
@@ -78,7 +78,7 @@ namespace Mikodev.Links.Internal
             {
                 token.ThrowIfCancellationRequested();
                 await client.Dispatcher.InvokeAsync(() => Lock(locker, () => profiles.Values.Sum(UpdateStatus)));
-                await Task.Delay(environment.BackgroundTaskDelay);
+                await Task.Delay(configurations.BackgroundTaskDelay);
             }
         }
 
@@ -110,7 +110,7 @@ namespace Mikodev.Links.Internal
                     imageHash = profile.ImageHash,
                 };
                 await network.BroadcastAsync("link.broadcast", data);
-                await Task.Delay(environment.BroadcastTaskDelay, token);
+                await Task.Delay(configurations.BroadcastTaskDelay, token);
             }
         }
 

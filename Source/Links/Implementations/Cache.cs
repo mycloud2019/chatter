@@ -29,12 +29,12 @@ namespace Mikodev.Links.Implementations
 
         private readonly string extension = ".png";
 
-        internal Cache(Configurations environment, INetwork network)
+        internal Cache(Configurations configurations, INetwork network)
         {
-            Debug.Assert(environment != null);
+            Debug.Assert(configurations != null);
             Debug.Assert(network != null);
             this.network = network;
-            cachepath = Path.GetFullPath(environment.CacheDirectory);
+            cachepath = Path.GetFullPath(configurations.CacheDirectory);
             network.RegisterHandler("link.get-cache", HandleCacheAsync);
         }
 
