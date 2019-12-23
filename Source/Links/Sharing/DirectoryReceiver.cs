@@ -1,24 +1,19 @@
-﻿using Mikodev.Links.Annotations;
-using System;
+﻿using Mikodev.Links.Abstractions;
 using System.IO;
 using System.Threading.Tasks;
 
 namespace Mikodev.Links.Sharing
 {
-    public sealed class DirectoryReceiver : DirectoryObject, IShareReceiver
+    internal sealed class DirectoryReceiver : DirectoryObject, IShareReceiver, ISharingDirectoryReceiver
     {
         private readonly TaskCompletionSource<bool> completion = new TaskCompletionSource<bool>();
 
-        public DirectoryReceiver(Client client, Profile profile, Stream stream, string name) : base(client, profile, stream)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            FullName = name;
-        }
+        public DirectoryReceiver(IClient client, Profile profile, Stream stream, string name) : base(client, stream, new DirectorySharingViewer(profile, name, name)) { }
 
         public void Accept(bool flag) => completion.SetResult(flag);
 
-        public Task<bool> AcceptAsync() => completion.Task;
+        public Task<bool> WaitForAcceptAsync() => completion.Task;
 
-        protected override Task InvokeAsync() => ReceiveDirectoryAsync(FullName);
+        protected override Task InvokeAsync() => GetDirectoryAsync(Viewer.FullName);
     }
 }

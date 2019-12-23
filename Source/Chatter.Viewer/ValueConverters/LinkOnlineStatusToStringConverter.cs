@@ -1,5 +1,5 @@
 ﻿using Avalonia.Data.Converters;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using System;
 using System.Globalization;
 

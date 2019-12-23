@@ -1,5 +1,4 @@
-﻿using Mikodev.Links;
-using Mikodev.Links.Annotations;
+﻿using Mikodev.Links.Abstractions;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,13 +8,13 @@ namespace Chatter
 {
     public partial class App : Application
     {
-        private Client client;
+        private IClient client;
 
         private Profile profile;
 
         private EventHandler<KeyEventArgs> textboxKeyDown;
 
-        public static Client CurrentClient
+        public static IClient CurrentClient
         {
             get => (Current as App)?.client;
             set => ((App)Current).client = value;
@@ -37,6 +36,13 @@ namespace Chatter
         {
             base.OnStartup(e);
             EventManager.RegisterClassHandler(typeof(TextBox), UIElement.KeyDownEvent, new KeyEventHandler((sender, args) => textboxKeyDown?.Invoke(sender, args)));
+            DispatcherUnhandledException += (s, e) =>
+            {
+                if (e.Exception is Exception exception)
+                    _ = MessageBox.Show(exception.Message, "Critical Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                e.Handled = true;
+                Shutdown();
+            };
         }
 
         protected override void OnExit(ExitEventArgs e)

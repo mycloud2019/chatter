@@ -4,7 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using Mikodev.Optional;
 using System.ComponentModel;
 using System.Diagnostics;

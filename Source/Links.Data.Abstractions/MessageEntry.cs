@@ -2,7 +2,7 @@
 
 namespace Mikodev.Links.Data.Abstractions
 {
-    public sealed class MessageModel
+    public sealed class MessageEntry
     {
         public string MessageId { get; set; }
 
@@ -12,7 +12,7 @@ namespace Mikodev.Links.Data.Abstractions
 
         public string Path { get; set; }
 
-        public string Data { get; set; }
+        public string Object { get; set; }
 
         public string Reference { get; set; }
     }

@@ -6,7 +6,7 @@ namespace Mikodev.Links.Abstractions.Models
     /// <summary>
     /// 本地缓存信息
     /// </summary>
-    public readonly struct HashInfo
+    internal readonly struct HashInfo
     {
         /// <summary>
         /// 散列值 (取决于散列算法)

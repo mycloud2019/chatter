@@ -2,7 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Chatter.Viewer.Controls;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using System;
 using System.Diagnostics;
 using System.Linq;

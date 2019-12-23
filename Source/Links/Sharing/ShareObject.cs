@@ -1,31 +1,26 @@
 ﻿using Mikodev.Binary;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using Mikodev.Links.Internal;
 using Mikodev.Optional;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using static Mikodev.Optional.Extensions;
 
 namespace Mikodev.Links.Sharing
 {
-    public abstract partial class ShareObject : IDisposable, INotifyPropertyChanged, INotifyPropertyChanging
+    internal abstract partial class ShareObject : ISharingObject, IDisposable
     {
-        #region const & static readonly
         private const int None = 0, Started = 1, Disposed = 2;
 
         private const int TickLimits = 30;
 
         private static readonly TimeSpan updateDelay = TimeSpan.FromMilliseconds(67);
-        #endregion
 
-        #region private
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 
         private readonly Stopwatch stopwatch = Stopwatch.StartNew();
@@ -34,69 +29,11 @@ namespace Mikodev.Links.Sharing
 
         private readonly LinkClient client;
 
+        private readonly NotifySharingViewer viewer;
+
         private int interStatus = None;
 
-        private string name;
-
-        private string fullName;
-
         private long interPosition;
-
-        private long position;
-
-        private double speed;
-
-        private ShareStatus shareStatus = ShareStatus.Pending;
-        #endregion
-
-        public Profile Profile { get; }
-
-        public string Name
-        {
-            get => name;
-            protected set => OnPropertyChange(ref name, value);
-        }
-
-        public string FullName
-        {
-            get => fullName;
-            protected set => OnPropertyChange(ref fullName, value);
-        }
-
-        public ShareStatus Status
-        {
-            get => shareStatus;
-            private set => OnPropertyChange(ref shareStatus, value);
-        }
-
-        public long Position
-        {
-            get => position;
-            private set => OnPropertyChange(ref position, value);
-        }
-
-        public double Speed
-        {
-            get => speed;
-            private set => OnPropertyChange(ref speed, value);
-        }
-
-        #region notify property change
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public event PropertyChangingEventHandler PropertyChanging;
-
-        protected void OnPropertyChange<T>(ref T location, T value, [CallerMemberName] string callerName = null)
-        {
-            PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(callerName));
-            if (EqualityComparer<T>.Default.Equals(location, value))
-                return;
-            location = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(callerName));
-        }
-
-        #endregion
 
         protected Stream Stream { get; }
 
@@ -106,26 +43,28 @@ namespace Mikodev.Links.Sharing
 
         internal LinkEnvironment Environment => client.Environment;
 
-        protected ShareObject(Client client, Profile profile, Stream stream)
+        public SharingViewer Viewer => viewer;
+
+        protected ShareObject(IClient client, Stream stream, NotifySharingViewer sharingViewer)
         {
             CancellationToken = cancellation.Token;
             this.client = (LinkClient)client ?? throw new ArgumentNullException(nameof(client));
-            Profile = profile ?? throw new ArgumentNullException(nameof(profile));
+            this.viewer = sharingViewer ?? throw new ArgumentNullException(nameof(sharingViewer));
             Stream = stream ?? throw new ArgumentNullException(nameof(stream));
         }
 
-        protected async Task SetStatus(ShareStatus status)
+        protected async Task SetStatus(SharingStatus status)
         {
-            await client.UIContext.InvokeAsync(() =>
+            await client.Dispatcher.InvokeAsync(() =>
             {
-                Debug.Assert((Status & ShareStatus.Completed) == 0);
-                if (status == ShareStatus.Running)
+                Debug.Assert((Viewer.Status & SharingStatus.Completed) == 0);
+                if (status == SharingStatus.Running)
                 {
-                    Debug.Assert(Status != ShareStatus.Running);
+                    Debug.Assert(Viewer.Status != SharingStatus.Running);
                     Debug.Assert(ticks.Count == 0);
                     ticks.Add(new Tick { TimeSpan = stopwatch.Elapsed });
                 }
-                Status = status;
+                viewer.SetStatus(status);
             });
         }
 
@@ -139,54 +78,51 @@ namespace Mikodev.Links.Sharing
         private async Task MainLoopAsync()
         {
             var invoke = this is IShareReceiver
-                ? Task.Run(ReceiveAsync)
-                : Task.Run(SendAsync);
-
+                ? Task.Run(GetAsync)
+                : Task.Run(PutAsync);
             do
-            {
-                await client.UIContext.InvokeAsync(Report);
-            }
+                await client.Dispatcher.InvokeAsync(Report);
             while (await Task.WhenAny(invoke, Task.Delay(updateDelay, CancellationToken)) != invoke);
 
             var result = await TryAsync(invoke);
-            var status = result.IsOk() ? ShareStatus.Success : ShareStatus.Aborted;
-            await client.UIContext.InvokeAsync(() => { if ((Status & ShareStatus.Completed) == 0) Status = status; });
-            await client.UIContext.InvokeAsync(Report);
+            var status = result.IsOk() ? SharingStatus.Success : SharingStatus.Aborted;
+            await client.Dispatcher.InvokeAsync(() => { if ((Viewer.Status & SharingStatus.Completed) == 0) viewer.SetStatus(status); });
+            await client.Dispatcher.InvokeAsync(Report);
         }
 
-        private async Task SendAsync()
+        private async Task PutAsync()
         {
             var buffer = await Stream.ReadBlockWithHeaderAsync(Environment.TcpBufferLimits, CancellationToken);
             var data = new Token(Generator, buffer);
             var dictionary = (IReadOnlyDictionary<string, Token>)data;
             var result = dictionary.TryGetValue("status", out var item) ? item.As<string>() : null;
-            await SetStatus(ShareStatus.Running);
+            await SetStatus(SharingStatus.Running);
 
             if (result == "ok")
                 await InvokeAsync();
             else if (result == "refused")
-                await SetStatus(ShareStatus.Refused);
+                await SetStatus(SharingStatus.Refused);
             else
                 throw new LinkException(LinkError.InvalidData);
         }
 
-        private async Task ReceiveAsync()
+        private async Task GetAsync()
         {
-            var accept = await ((IShareReceiver)this).AcceptAsync();
+            var accept = await ((IShareReceiver)this).WaitForAcceptAsync();
             var buffer = Generator.Encode(new { status = accept ? "ok" : "refused" });
             await Stream.WriteWithHeaderAsync(buffer, CancellationToken);
 
             if (accept)
             {
                 var (name, path) = FindAvailableName();
-                await client.UIContext.InvokeAsync(() => Name = name);
-                await client.UIContext.InvokeAsync(() => FullName = path);
-                await SetStatus(ShareStatus.Running);
+                await client.Dispatcher.InvokeAsync(() => viewer.SetName(name));
+                await client.Dispatcher.InvokeAsync(() => viewer.SetFullName(path));
+                await SetStatus(SharingStatus.Running);
                 await InvokeAsync();
             }
             else
             {
-                await SetStatus(ShareStatus.Refused);
+                await SetStatus(SharingStatus.Refused);
             }
         }
 
@@ -195,7 +131,7 @@ namespace Mikodev.Links.Sharing
             var container = new DirectoryInfo(Environment.ShareDirectory);
             if (container.Exists == false)
                 container.Create();
-            var name = Name;
+            var name = Viewer.Name;
             var tail = Path.GetExtension(name);
             var head = Path.GetFileNameWithoutExtension(name);
             for (var i = 0; i < 16; i++)
@@ -213,7 +149,7 @@ namespace Mikodev.Links.Sharing
         protected virtual void Report()
         {
             var position = interPosition;
-            Position = position;
+            viewer.SetPosition(position);
             if (ticks.Count == 0)
                 return;
 
@@ -227,7 +163,7 @@ namespace Mikodev.Links.Sharing
             var count = ticks.Count - TickLimits;
             if (count > 0)
                 ticks.RemoveRange(0, count);
-            Speed = ticks.Average(x => x.Speed);
+            viewer.SetSpeed(ticks.Average(x => x.Speed));
         }
 
         protected async Task PutFileAsync(string path, long length)
@@ -254,7 +190,7 @@ namespace Mikodev.Links.Sharing
             }
         }
 
-        protected async Task ReceiveFileAsync(string path, long length)
+        protected async Task GetFileAsync(string path, long length)
         {
             if (length < 0)
                 throw new IOException("Invalid file length!");

@@ -5,6 +5,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Chatter.Viewer.Implementations;
 using Mikodev.Links;
+using Mikodev.Links.Abstractions;
 using Mikodev.Links.Data;
 using Mikodev.Optional;
 using System;
@@ -22,7 +23,7 @@ namespace Chatter.Viewer
 
         private static readonly string settingsPath = $"{nameof(Chatter)}.settings.json";
 
-        private Client client = null;
+        private IClient client = null;
 
         public Cover()
         {
@@ -49,11 +50,11 @@ namespace Chatter.Viewer
             var exists = File.Exists(settingsPath);
             var result = exists
                 ? await TryAsync(() => LinkFactory.CreateSettingsAsync(settingsPath))
-                : Ok<ILinkSettings, Exception>(default);
+                : Ok<ISettings, Exception>(default);
             if (exists && result.IsError())
                 await Notice.ShowDialog(this, result.UnwrapError().Message, "Error");
-            var store = new SqliteDataStore($"{nameof(Chatter)}.db");
-            var context = new SynchronizationUIContext(Dispatcher.UIThread);
+            var store = new SqliteStorage($"{nameof(Chatter)}.db");
+            var context = new SynchronizationDispatcher(Dispatcher.UIThread);
             client = LinkFactory.CreateClient(result.UnwrapOrDefault() ?? LinkFactory.CreateSettings(), context, store);
             client.Profile.Name = string.Concat(Environment.UserName, "@", Environment.MachineName);
             DataContext = client.Profile;

@@ -1,4 +1,4 @@
-﻿using Mikodev.Links.Annotations;
+﻿using Mikodev.Links.Abstractions;
 using System.ComponentModel;
 using System.Net;
 using System.Runtime.CompilerServices;

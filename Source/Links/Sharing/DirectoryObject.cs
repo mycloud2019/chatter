@@ -1,5 +1,5 @@
 ﻿using Mikodev.Binary;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using Mikodev.Links.Internal;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -8,40 +8,37 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links.Sharing
 {
-    public abstract class DirectoryObject : ShareObject
+    internal abstract class DirectoryObject : ShareObject
     {
-        protected DirectoryObject(Client client, Profile profile, Stream stream) : base(client, profile, stream)
-        {
-            // nothing
-        }
+        protected DirectoryObject(IClient client, Stream stream, DirectorySharingViewer viewer) : base(client, stream, viewer) { }
 
         protected async Task PutDirectoryAsync(string path)
         {
-            await InternalSendDirectoryAsync(new DirectoryInfo(path), ImmutableList<string>.Empty);
+            async Task PutAsync(DirectoryInfo directoryInfo, ImmutableList<string> relative)
+            {
+                var head = Generator.Encode(new { type = "directory", path = relative });
+                await Stream.WriteWithHeaderAsync(head, CancellationToken);
+
+                foreach (var file in directoryInfo.GetFiles())
+                {
+                    var length = file.Length;
+                    var data = Generator.Encode(new { type = "file", name = file.Name, length });
+                    await Stream.WriteWithHeaderAsync(data, CancellationToken);
+                    await PutFileAsync(file.FullName, length);
+                }
+
+                foreach (var directory in directoryInfo.GetDirectories())
+                {
+                    await PutAsync(directory, relative.Add(directory.Name));
+                }
+            }
+
+            await PutAsync(new DirectoryInfo(path), ImmutableList<string>.Empty);
             var tail = Generator.Encode(new { type = "end" });
             await Stream.WriteWithHeaderAsync(tail, CancellationToken);
         }
 
-        private async Task InternalSendDirectoryAsync(DirectoryInfo directoryInfo, ImmutableList<string> relative)
-        {
-            var head = Generator.Encode(new { type = "directory", path = relative });
-            await Stream.WriteWithHeaderAsync(head, CancellationToken);
-
-            foreach (var file in directoryInfo.GetFiles())
-            {
-                var length = file.Length;
-                var data = Generator.Encode(new { type = "file", name = file.Name, length });
-                await Stream.WriteWithHeaderAsync(data, CancellationToken);
-                await PutFileAsync(file.FullName, length);
-            }
-
-            foreach (var directory in directoryInfo.GetDirectories())
-            {
-                await InternalSendDirectoryAsync(directory, relative.Add(directory.Name));
-            }
-        }
-
-        protected async Task ReceiveDirectoryAsync(string path)
+        protected async Task GetDirectoryAsync(string path)
         {
             var top = Path.GetFullPath(path);
             var current = top;
@@ -65,7 +62,7 @@ namespace Mikodev.Links.Sharing
                         var name = token["name"].As<string>();
                         var length = token["length"].As<long>();
                         var fullName = Path.Combine(current, name);
-                        await ReceiveFileAsync(fullName, length);
+                        await GetFileAsync(fullName, length);
                         break;
 
                     case "end":

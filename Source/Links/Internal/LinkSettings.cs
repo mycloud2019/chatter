@@ -1,4 +1,5 @@
-﻿using Mikodev.Links.Internal;
+﻿using Mikodev.Links.Abstractions;
+using Mikodev.Links.Internal;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links
 {
-    internal sealed class LinkSettings : ILinkSettings
+    internal sealed class LinkSettings : ISettings
     {
         internal LinkEnvironment Environment { get; private set; }
 

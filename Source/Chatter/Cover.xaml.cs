@@ -1,5 +1,6 @@
 ﻿using Chatter.Implementations;
 using Mikodev.Links;
+using Mikodev.Links.Abstractions;
 using Mikodev.Links.Data;
 using Mikodev.Optional;
 using System;
@@ -19,7 +20,7 @@ namespace Chatter
 
         private static readonly string SettingsPath = $"{nameof(Chatter)}.settings.json";
 
-        private Client client;
+        private IClient client;
 
         public Cover()
         {
@@ -29,16 +30,17 @@ namespace Chatter
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            static async Task<Client> CreateClient()
+            static async Task<IClient> CreateClient()
             {
                 var exists = File.Exists(SettingsPath);
                 var result = exists
                     ? await TryAsync(() => LinkFactory.CreateSettingsAsync(SettingsPath))
-                    : Ok<ILinkSettings, Exception>(default);
+                    : Ok<ISettings, Exception>(default);
                 if (exists && result.IsError())
                     _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                var store = new SqliteDataStore($"{nameof(Chatter)}.db");
-                var context = new SynchronizationUIContext(TaskScheduler.FromCurrentSynchronizationContext(), Application.Current.Dispatcher);
+                var store = new SqliteStorage($"{nameof(Chatter)}.db");
+                await store.InitializeAsync();
+                var context = new SynchronizationDispatcher(TaskScheduler.FromCurrentSynchronizationContext(), Application.Current.Dispatcher);
                 var client = LinkFactory.CreateClient(result.UnwrapOrDefault() ?? LinkFactory.CreateSettings(), context, store);
                 if (exists == false || result.IsError())
                     client.Profile.Name = $"{Environment.UserName}@{Environment.MachineName}";
@@ -54,7 +56,7 @@ namespace Chatter
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            static async Task SaveSettings(ILinkSettings settings)
+            static async Task SaveSettings(ISettings settings)
             {
                 var result = await TryAsync(() => settings.SaveAsync(SettingsPath));
                 if (result.IsOk())
@@ -62,7 +64,7 @@ namespace Chatter
                 _ = MessageBox.Show(result.UnwrapError().Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-            static async Task<bool> StartClient(Client client)
+            static async Task<bool> StartClient(IClient client)
             {
                 var result = await TryAsync(() => client.StartAsync());
                 if (result.IsError())

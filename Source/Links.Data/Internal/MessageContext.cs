@@ -9,7 +9,7 @@ namespace Mikodev.Links.Data.Internal
     {
         private readonly string filename;
 
-        public DbSet<MessageModel> Messages { get; set; }
+        public DbSet<MessageEntry> Messages { get; set; }
 
         public MessageContext(string filename)
         {
@@ -25,8 +25,8 @@ namespace Mikodev.Links.Data.Internal
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            _ = modelBuilder.Entity<MessageModel>().ToTable("Messages");
-            _ = modelBuilder.Entity<MessageModel>().HasKey(x => new { x.ProfileId, x.MessageId });
+            _ = modelBuilder.Entity<MessageEntry>().ToTable("Messages");
+            _ = modelBuilder.Entity<MessageEntry>().HasKey(x => new { x.ProfileId, x.MessageId });
         }
     }
 }

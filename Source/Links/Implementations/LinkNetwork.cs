@@ -1,6 +1,5 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
-using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using Mikodev.Links.Messages;
 using Mikodev.Tasks.Abstractions;
@@ -56,7 +55,7 @@ namespace Mikodev.Links.Implementations
             udpClient = new UdpClient(udpEndPoint) { EnableBroadcast = true };
             tcpListener = new TcpListener(tcpEndPoint);
             tcpListener.Start();
-            await client.UIContext.InvokeAsync(() =>
+            await client.Dispatcher.InvokeAsync(() =>
             {
                 profile.UdpPort = udpEndPoint.Port;
                 profile.TcpPort = tcpEndPoint.Port;
@@ -244,7 +243,6 @@ namespace Mikodev.Links.Implementations
         public async Task SendAsync(LinkProfile profile, NotifyMessage message, string path, object packetData)
         {
             message.SetStatus(MessageStatus.Pending);
-            profile.MessageCollection.Add(message);
 
             bool Handled(Token token)
             {

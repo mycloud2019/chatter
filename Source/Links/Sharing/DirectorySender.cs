@@ -1,17 +1,13 @@
-﻿using Mikodev.Links.Annotations;
+﻿using Mikodev.Links.Abstractions;
 using System.IO;
 using System.Threading.Tasks;
 
 namespace Mikodev.Links.Sharing
 {
-    public sealed class DirectorySender : DirectoryObject
+    internal sealed class DirectorySender : DirectoryObject, ISharingDirectorySender
     {
-        public DirectorySender(Client client, Profile profile, Stream stream, string fullPath) : base(client, profile, stream)
-        {
-            Name = Path.GetDirectoryName(fullPath);
-            FullName = fullPath;
-        }
+        public DirectorySender(IClient client, Profile profile, Stream stream, string fullPath) : base(client, stream, new DirectorySharingViewer(profile, Path.GetDirectoryName(fullPath), fullPath)) { }
 
-        protected override Task InvokeAsync() => PutDirectoryAsync(FullName);
+        protected override Task InvokeAsync() => PutDirectoryAsync(Viewer.FullName);
     }
 }

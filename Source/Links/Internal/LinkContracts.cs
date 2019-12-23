@@ -1,5 +1,4 @@
 ﻿using Mikodev.Links.Abstractions;
-using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using System;
 using System.Collections.Generic;
@@ -37,7 +36,7 @@ namespace Mikodev.Links
 
         internal void CleanProfileCollection()
         {
-            client.UIContext.VerifyAccess();
+            client.Dispatcher.VerifyAccess();
 
             var collection = ProfileCollection;
 
@@ -79,7 +78,7 @@ namespace Mikodev.Links
             while (true)
             {
                 token.ThrowIfCancellationRequested();
-                await client.UIContext.InvokeAsync(() => Lock(locker, () => profiles.Values.Sum(UpdateStatus)));
+                await client.Dispatcher.InvokeAsync(() => Lock(locker, () => profiles.Values.Sum(UpdateStatus)));
                 await Task.Delay(environment.BackgroundTaskDelay);
             }
         }
@@ -91,7 +90,7 @@ namespace Mikodev.Links
 
             var fileInfo = await cache.GetCacheAsync(imageHash, profile.GetTcpEndPoint(), client.CancellationToken);
             profile.ImageHash = imageHash;
-            await client.UIContext.InvokeAsync(() => profile.SetImagePath(fileInfo.FullName));
+            await client.Dispatcher.InvokeAsync(() => profile.SetImagePath(fileInfo.FullName));
         }
 
         private async Task BroadcastLoopAsync()
@@ -131,7 +130,7 @@ namespace Mikodev.Links
 
             var instance = default(LinkProfile);
             var profile = Lock(locker, () => profiles.GetOrAdd(senderId, key => instance = new LinkProfile(key, LinkProfileType.Client)));
-            await client.UIContext.InvokeAsync(() =>
+            await client.Dispatcher.InvokeAsync(() =>
             {
                 profile.Name = name;
                 profile.Text = text;

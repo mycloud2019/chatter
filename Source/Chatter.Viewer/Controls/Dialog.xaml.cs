@@ -2,7 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;

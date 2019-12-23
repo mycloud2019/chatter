@@ -1,6 +1,6 @@
 ﻿using Chatter.Internal;
 using Chatter.Windows;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using Mikodev.Optional;
 using System;
 using System.Collections.Generic;

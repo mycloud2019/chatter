@@ -1,5 +1,5 @@
 ﻿using Chatter.Internal;
-using Mikodev.Links.Sharing;
+using Mikodev.Links.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,7 +9,7 @@ namespace Chatter.Windows
 {
     public sealed class DirectoryWindow : ShareWindow
     {
-        private readonly DirectoryObject directoryObject;
+        private readonly SharingViewer viewer;
 
         private readonly Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -17,17 +17,17 @@ namespace Chatter.Windows
 
         private readonly List<(TimeSpan timeSpan, double speed)> history = new List<(TimeSpan, double)>();
 
-        public DirectoryWindow(DirectoryObject directoryObject) : base(directoryObject)
+        public DirectoryWindow(ISharingDirectoryObject directoryObject) : base(directoryObject)
         {
-            this.directoryObject = directoryObject;
+            this.viewer = directoryObject.Viewer;
         }
 
         protected override void OnUpdate(string propertyName)
         {
             base.OnUpdate(propertyName);
 
-            UpdateNotice($"{Extensions.ToUnit(directoryObject.Position)}, {directoryObject.Status}");
-            if (propertyName != nameof(DirectoryObject.Speed) && (directoryObject.Status & ShareStatus.Completed) == 0)
+            UpdateNotice($"{Extensions.ToUnit(viewer.Position)}, {viewer.Status}");
+            if (propertyName != nameof(SharingViewer.Speed) && (viewer.Status & SharingStatus.Completed) == 0)
                 return;
 
             var count = history.Count;
@@ -36,7 +36,7 @@ namespace Chatter.Windows
             var limits = TimeSpan.FromSeconds(30);
             var timeSpan = stopwatch.Elapsed;
             var standard = timeSpan - limits;
-            history.Add((timeSpan, directoryObject.Speed));
+            history.Add((timeSpan, viewer.Speed));
             var first = history.FirstOrDefault(x => x.timeSpan > standard);
             var index = history.IndexOf(first);
             if (index > 0)

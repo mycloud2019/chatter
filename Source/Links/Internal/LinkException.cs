@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Mikodev.Links
 {
     [Serializable]
-    public class LinkException : Exception
+    internal class LinkException : Exception
     {
         public LinkError ErrorCode { get; }
 

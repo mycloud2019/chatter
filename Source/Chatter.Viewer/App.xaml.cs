@@ -2,8 +2,7 @@
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
-using Mikodev.Links;
-using Mikodev.Links.Annotations;
+using Mikodev.Links.Abstractions;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -12,11 +11,11 @@ namespace Chatter.Viewer
 {
     public class App : Application
     {
-        private Client client;
+        private IClient client;
 
         private Profile profile;
 
-        public static Client CurrentClient
+        public static IClient CurrentClient
         {
             get => ((App)Current).client;
             set => ((App)Current).client = value;

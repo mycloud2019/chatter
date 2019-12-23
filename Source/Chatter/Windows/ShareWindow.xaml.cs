@@ -1,6 +1,6 @@
 ﻿using Chatter.Internal;
 using Chatter.Interop;
-using Mikodev.Links.Sharing;
+using Mikodev.Links.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,13 +16,15 @@ namespace Chatter.Windows
 {
     public abstract partial class ShareWindow : Window
     {
-        private readonly ShareObject shareObject;
+        private readonly ISharingObject shareObject;
+
+        private readonly SharingViewer viewer;
 
         private IList<(double progress, double speed)> values;
 
         private double maximumSpeed = 0.0;
 
-        public ShareWindow(ShareObject shareObject)
+        public ShareWindow(ISharingObject shareObject)
         {
             InitializeComponent();
 
@@ -30,28 +32,29 @@ namespace Chatter.Windows
             Debug.Assert(owner is Entrance);
             Owner = owner;
 
-            var receiver = shareObject is IShareReceiver;
+            var receiver = shareObject is ISharingReceiver;
             this.shareObject = shareObject ?? throw new ArgumentNullException(nameof(shareObject));
+            this.viewer = shareObject.Viewer;
             if (receiver == false)
                 acceptButton.Visibility = Visibility.Collapsed;
             sourceTextBlock.Text = receiver ? "Sender" : "Receiver";
             Title = receiver ? "Receiver" : "Sender";
-            DataContext = shareObject;
+            DataContext = this.viewer;
 
             var handler = new PropertyChangedEventHandler((s, e) => OnUpdate(e.PropertyName));
             if (receiver)
                 Loaded += (s, _) => NativeMethods.FlashWindow(new WindowInteropHelper((Window)s).Handle, true);
-            Closed += (s, _) => shareObject.Dispose();
+            Closed += (s, _) => (shareObject as IDisposable)?.Dispose();
             Loaded += (s, _) => OnUpdate(string.Empty);
-            Loaded += (s, _) => shareObject.PropertyChanged += handler;
-            Unloaded += (s, _) => shareObject.PropertyChanged -= handler;
+            Loaded += (s, _) => ((INotifyPropertyChanged)viewer).PropertyChanged += handler;
+            Unloaded += (s, _) => ((INotifyPropertyChanged)viewer).PropertyChanged -= handler;
             SizeChanged += (s, _) => UpdateGraphics(values);
         }
 
         private void OnButtonClick(object _, RoutedEventArgs e)
         {
             var button = e.OriginalSource as Button; ;
-            var receiver = shareObject as IShareReceiver;
+            var receiver = shareObject as ISharingReceiver;
             if (button == acceptButton)
             {
                 Debug.Assert(receiver != null);
@@ -60,10 +63,10 @@ namespace Chatter.Windows
             }
             else if (button == cancelButton)
             {
-                if (receiver != null && shareObject.Status == ShareStatus.Pending)
+                if (receiver != null && viewer.Status == SharingStatus.Pending)
                     receiver.Accept(false);
                 else
-                    shareObject.Dispose();
+                    (shareObject as IDisposable)?.Dispose();
             }
             else if (button == backupButton)
             {
@@ -73,7 +76,7 @@ namespace Chatter.Windows
 
         protected virtual void OnUpdate(string propertyName)
         {
-            if (propertyName != nameof(ShareObject.Status) || (shareObject.Status & ShareStatus.Completed) == 0)
+            if (propertyName != nameof(SharingViewer.Status) || (viewer.Status & SharingStatus.Completed) == 0)
                 return;
             // Change visibility when completed
             buttonPanel.IsEnabled = false;
@@ -123,10 +126,10 @@ namespace Chatter.Windows
                 points.Add(new Point(lastPoint.X, height));
                 geometryContext.PolyLineTo(points, true, true);
             }
-            var status = shareObject.Status;
-            var color = status == ShareStatus.Success
+            var status = viewer.Status;
+            var color = status == SharingStatus.Success
                 ? Color.FromArgb(192, 32, 192, 0)
-                : status == ShareStatus.Aborted ? Color.FromArgb(192, 220, 20, 60) : Color.FromArgb(192, 58, 110, 165);
+                : status == SharingStatus.Aborted ? Color.FromArgb(192, 220, 20, 60) : Color.FromArgb(192, 58, 110, 165);
             context.DrawGeometry(new SolidColorBrush(color), null, streamGeometry);
 
             var vertical = (int)(lastPoint.Y + 0.5) + 0.5 - offset.Y;

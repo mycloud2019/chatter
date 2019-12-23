@@ -21,8 +21,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Links.Data.Abstractions", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Links.Data", "Links.Data\Links.Data.csproj", "{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Links.Annotations", "Links.Annotations\Links.Annotations.csproj", "{9DB28B5C-A653-4173-8037-65E0F7332BE7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,10 +59,6 @@ Global
 		{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E7E3C2FA-9B3C-4913-A70E-4EB865D95017}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9DB28B5C-A653-4173-8037-65E0F7332BE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

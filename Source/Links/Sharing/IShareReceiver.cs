@@ -2,10 +2,8 @@
 
 namespace Mikodev.Links.Sharing
 {
-    public interface IShareReceiver
+    internal interface IShareReceiver
     {
-        void Accept(bool accept);
-
-        Task<bool> AcceptAsync();
+        Task<bool> WaitForAcceptAsync();
     }
 }

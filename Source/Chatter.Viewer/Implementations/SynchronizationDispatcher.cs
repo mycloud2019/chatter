@@ -1,17 +1,18 @@
 ﻿using Avalonia.Threading;
-using Mikodev.Links.Abstractions;
 using System;
 using System.Threading.Tasks;
 
 namespace Chatter.Viewer.Implementations
 {
-    internal class SynchronizationUIContext : ILinkUIContext
+    internal class SynchronizationDispatcher : Mikodev.Links.Abstractions.IDispatcher
     {
         private readonly Dispatcher dispatcher;
 
-        public SynchronizationUIContext(Dispatcher dispatcher) => this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        public SynchronizationDispatcher(Dispatcher dispatcher) => this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
 
         public Task InvokeAsync(Action action) => dispatcher.InvokeAsync(action);
+
+        public Task InvokeAsync(Func<Task> func) => dispatcher.InvokeAsync(func);
 
         public void VerifyAccess() => dispatcher.VerifyAccess();
     }

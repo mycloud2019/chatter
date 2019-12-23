@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace Mikodev.Links
+namespace Mikodev.Links.Abstractions
 {
-    public interface ILinkSettings
+    public interface ISettings
     {
         Task SaveAsync(string path);
     }

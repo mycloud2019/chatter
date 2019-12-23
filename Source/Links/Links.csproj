@@ -18,7 +18,6 @@
     <ProjectReference Include="..\..\submodules\dotnet-task-completion-management\Source\Tasks.Abstractions\Tasks.Abstractions.csproj" />
     <ProjectReference Include="..\..\submodules\dotnet-task-completion-management\Source\Tasks.Implementations\Tasks.Implementations.fsproj" />
     <ProjectReference Include="..\Links.Abstractions\Links.Abstractions.csproj" />
-    <ProjectReference Include="..\Links.Annotations\Links.Annotations.csproj" />
     <ProjectReference Include="..\Links.Data.Abstractions\Links.Data.Abstractions.csproj" />
     <ProjectReference Include="..\Links.Data\Links.Data.csproj" />
   </ItemGroup>

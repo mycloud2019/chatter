@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace Mikodev.Links.Annotations
+namespace Mikodev.Links.Abstractions
 {
     /// <summary>
     /// 资料

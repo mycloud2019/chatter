@@ -9,7 +9,7 @@ namespace Mikodev.Links.Abstractions
     /// <summary>
     /// 缓存管理
     /// </summary>
-    public interface ILinkCache
+    internal interface ILinkCache
     {
         /// <summary>
         /// 尝试根据散列值获取对应的缓存文件

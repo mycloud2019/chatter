@@ -1,7 +1,6 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
 using Mikodev.Links.Abstractions.Models;
-using Mikodev.Links.Annotations;
 using Mikodev.Links.Internal;
 using Mikodev.Links.Sharing;
 using Mikodev.Optional;
@@ -11,19 +10,11 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links
 {
-    public delegate void FileSenderHandler(FileSender sender);
-
-    public delegate void FileReceiverHandler(FileReceiver receiver);
-
-    public delegate void DirectorySenderHandler(DirectorySender sender);
-
-    public delegate void DirectoryReceiverHandler(DirectoryReceiver receiver);
-
     internal partial class LinkClient
     {
-        public override event FileReceiverHandler NewFileReceiver;
+        public event SharingHandler<ISharingFileReceiver> NewFileReceiver;
 
-        public override event DirectoryReceiverHandler NewDirectoryReceiver;
+        public event SharingHandler<ISharingDirectoryReceiver> NewDirectoryReceiver;
 
         private void Initial(ILinkNetwork network)
         {
@@ -31,7 +22,7 @@ namespace Mikodev.Links
             network.RegisterHandler("link.share.directory", HandleDirectoryAsync);
         }
 
-        public override async Task PutFileAsync(Profile profile, string file, FileSenderHandler handler)
+        public async Task PutFileAsync(Profile profile, string file, SharingHandler<ISharingFileSender> handler)
         {
             if (profile == null || handler == null || !(profile is LinkProfile receiver))
                 throw new ArgumentNullException();
@@ -48,14 +39,14 @@ namespace Mikodev.Links
                     throw new LinkException(LinkError.InvalidData);
                 using (var sender = new FileSender(this, receiver, stream, fileInfo.FullName, length))
                 {
-                    await UIContext.InvokeAsync(() => handler.Invoke(sender));
+                    await Dispatcher.InvokeAsync(() => handler.Invoke(sender));
                     await sender.LoopAsync();
                 }
                 return new Unit();
             });
         }
 
-        public override async Task PutDirectoryAsync(Profile profile, string directory, DirectorySenderHandler handler)
+        public async Task PutDirectoryAsync(Profile profile, string directory, SharingHandler<ISharingDirectorySender> handler)
         {
             if (profile == null || handler == null || !(profile is LinkProfile receiver))
                 throw new ArgumentNullException();
@@ -71,7 +62,7 @@ namespace Mikodev.Links
                     throw new LinkException(LinkError.InvalidData);
                 using (var sender = new DirectorySender(this, receiver, stream, directoryInfo.FullName))
                 {
-                    await UIContext.InvokeAsync(() => handler.Invoke(sender));
+                    await Dispatcher.InvokeAsync(() => handler.Invoke(sender));
                     await sender.LoopAsync();
                 }
                 return new Unit();
@@ -90,7 +81,7 @@ namespace Mikodev.Links
             using (var receiver = new FileReceiver(this, profile, parameter.Stream, name, length))
             {
                 await parameter.ResponseAsync(new { status = "wait" });
-                await UIContext.InvokeAsync(() => handler.Invoke(receiver));
+                await Dispatcher.InvokeAsync(() => handler.Invoke(receiver));
                 await receiver.LoopAsync();
             }
         }
@@ -106,7 +97,7 @@ namespace Mikodev.Links
             using (var receiver = new DirectoryReceiver(this, profile, parameter.Stream, name))
             {
                 await parameter.ResponseAsync(new { status = "wait" });
-                await UIContext.InvokeAsync(() => handler.Invoke(receiver));
+                await Dispatcher.InvokeAsync(() => handler.Invoke(receiver));
                 await receiver.LoopAsync();
             }
         }

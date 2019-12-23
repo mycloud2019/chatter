@@ -1,9 +1,7 @@
 ﻿using Chatter.Interop;
 using Chatter.Pages;
 using Chatter.Windows;
-using Mikodev.Links;
-using Mikodev.Links.Annotations;
-using Mikodev.Links.Messages;
+using Mikodev.Links.Abstractions;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -19,7 +17,7 @@ namespace Chatter
 {
     public partial class Entrance : Window
     {
-        private readonly Client client;
+        private readonly IClient client;
 
         public Entrance()
         {
