@@ -7,8 +7,8 @@ namespace Mikodev.Links.Internal.Sharing
 {
     internal sealed class FileSender : FileObject, ISharingFileSender
     {
-        public FileSender(IClient client, Profile profile, Stream stream, string fullName, long length) : base(client, stream, new NotifyFileSharingViewer(profile, Path.GetFileName(fullName), fullName, length)) { }
+        public FileSender(Context context, Profile profile, Stream stream, string fullName, long length) : base(context, stream, new NotifyFileSharingViewer(profile, Path.GetFileName(fullName), fullName, length)) { }
 
-        protected override Task InvokeAsync() => PutFileAsync(Viewer.FullName, Viewer.Length);
+        protected override Task InvokeAsync() => this.PutFileAsync(this.Viewer.FullName, this.Viewer.Length);
     }
 }

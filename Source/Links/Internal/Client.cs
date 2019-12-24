@@ -20,110 +20,122 @@ namespace Mikodev.Links.Internal
     {
         private const int None = 0, Started = 1, Disposed = 2;
 
+        private readonly CancellationToken cancellationToken;
+
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 
-        private readonly NotifyContractProfile profile;
+        private readonly NotifyClientProfile profile;
+
+        private readonly Settings settings;
+
+        private readonly Context context;
+
+        private readonly ICache cache;
+
+        private readonly INetwork network;
+
+        private readonly IStorage storage;
+
+        private readonly IGenerator generator = Generator.CreateDefault();
+
+        private readonly IDispatcher dispatcher;
 
         private int status = None;
 
         public event EventHandler<MessageEventArgs> NewMessage;
 
-        public CancellationToken CancellationToken { get; }
+        public Profile Profile => this.profile;
 
-        public IGenerator Generator { get; } = Binary.Generator.CreateDefault();
+        public IEnumerable<Profile> Profiles => this.profileCollection;
 
-        public IStorage Storage { get; }
-
-        public ICache Cache { get; }
-
-        public INetwork Network { get; }
-
-        public IDispatcher Dispatcher { get; }
-
-        public Contracts Contracts { get; }
-
-        public Settings Settings { get; }
-
-        public Profile Profile => profile;
-
-        public IEnumerable<Profile> Profiles => Contracts.ProfileCollection;
-
-        public string ReceivingDirectory => Settings.SharingDirectory;
+        public string ReceivingDirectory => this.settings.SharingDirectory;
 
         public Client(Settings settings, IDispatcher dispatcher, IStorage storage)
         {
+            void ProfileChanged(object sender, PropertyChangedEventArgs e)
+            {
+                var profile = this.profile;
+                Debug.Assert(sender == profile);
+                if (e.PropertyName == nameof(NotifyClientProfile.Name))
+                    settings.ClientName = profile.Name;
+                else if (e.PropertyName == nameof(NotifyClientProfile.Text))
+                    settings.ClientText = profile.Text;
+                else if (e.PropertyName == nameof(NotifyClientProfile.ImageHash))
+                    settings.ClientImageHash = profile.ImageHash;
+            }
+
+            NotifyClientProfile InitializeProfile()
+            {
+                var imageHash = settings.ClientImageHash;
+                var imagePath = default(FileInfo);
+                var exists = !string.IsNullOrEmpty(imageHash) && this.cache.TryGetCache(imageHash, out imagePath);
+                var profile = new NotifyClientProfile(settings.ClientId)
+                {
+                    Name = settings.ClientName,
+                    Text = settings.ClientText,
+                    UdpPort = settings.UdpEndPoint.Port,
+                    TcpPort = settings.TcpEndPoint.Port,
+                    ImageHash = exists ? imageHash : string.Empty,
+                };
+                profile.SetImagePath(exists ? imagePath.FullName : string.Empty);
+                profile.SetIPAddress(IPAddress.Loopback);
+                return profile;
+            }
+
             if (settings is null)
                 throw new ArgumentNullException(nameof(settings));
             if (dispatcher is null)
                 throw new ArgumentNullException(nameof(dispatcher));
             if (storage is null)
                 throw new ArgumentNullException(nameof(storage));
-            CancellationToken = cancellation.Token;
-            Dispatcher = dispatcher;
-            Storage = storage;
+            this.cancellationToken = this.cancellation.Token;
+            this.dispatcher = dispatcher;
+            this.storage = storage;
 
-            void ProfileChanged(object sender, PropertyChangedEventArgs e)
-            {
-                var profile = this.profile;
-                Debug.Assert(sender == profile);
-                if (e.PropertyName == nameof(NotifyContractProfile.Name))
-                    settings.ClientName = profile.Name;
-                else if (e.PropertyName == nameof(NotifyContractProfile.Text))
-                    settings.ClientText = profile.Text;
-                else if (e.PropertyName == nameof(NotifyContractProfile.ImageHash))
-                    settings.ClientImageHash = profile.ImageHash;
-            }
+            this.settings = settings;
+            this.context = new Context(settings, this.generator, dispatcher, this, this.cancellation.Token);
+            this.network = new Network(this.context);
+            this.cache = new Cache(this.context, this.network);
 
-            Settings = settings;
-            Network = new Network(this);
-            Contracts = new Contracts(this);
-            Cache = new Cache(Settings, Network);
+            this.profile = InitializeProfile();
+            this.profile.PropertyChanged += ProfileChanged;
 
-            var imageHash = settings.ClientImageHash;
-            var imagePath = default(FileInfo);
-            var exists = !string.IsNullOrEmpty(imageHash) && Cache.TryGetCache(imageHash, out imagePath);
-            var profile = new NotifyContractProfile(settings.ClientId)
-            {
-                Name = settings.ClientName,
-                Text = settings.ClientText,
-                UdpPort = settings.UdpEndPoint.Port,
-                TcpPort = settings.TcpEndPoint.Port,
-                ImageHash = exists ? imageHash : string.Empty,
-            };
-            profile.SetImagePath(exists ? imagePath.FullName : string.Empty);
-            profile.SetIPAddress(IPAddress.Loopback);
-
-            this.profile = profile;
-            profile.PropertyChanged += ProfileChanged;
-
-            Initial(Network);
-            Network.RegisterHandler("link.message.text", HandleTextAsync);
-            Network.RegisterHandler("link.message.image-hash", HandleImageAsync);
+            this.network.RegisterHandler("link.message.text", this.HandleTextAsync);
+            this.network.RegisterHandler("link.message.image-hash", this.HandleImageAsync);
+            this.network.RegisterHandler("link.sharing.file", this.HandleFileAsync);
+            this.network.RegisterHandler("link.sharing.directory", this.HandleDirectoryAsync);
+            this.network.RegisterHandler("link.broadcast", this.HandleBroadcastAsync);
         }
 
         public async Task StartAsync()
         {
-            if (Interlocked.CompareExchange(ref status, Started, None) != None)
+            if (Interlocked.CompareExchange(ref this.status, Started, None) != None)
                 throw new InvalidOperationException();
             await Task.Yield();
-            var network = (Network)Network;
-            var manager = Contracts;
+            var network = (Network)this.network;
             network.Initialize();
-            _ = Task.Run(() => network.LoopAsync());
-            _ = Task.Run(() => manager.LoopAsync());
+            await this.storage.InitializeAsync();
+            var tasks = new[]
+            {
+                Task.Run(network.LoopAsync),
+                Task.Run(this.ProfileStatisticLoopAsync),
+                Task.Run(this.ProfileBroadcastLoopAsync),
+            };
+            _ = Task.WhenAll(tasks);
         }
-
-        public void CleanProfiles() => Contracts.CleanProfileCollection();
-
-        public Task WriteSettingsAsync(string file) => Settings.SaveAsync(file);
 
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref status, Disposed) == Disposed)
+            if (Interlocked.Exchange(ref this.status, Disposed) == Disposed)
                 return;
-            cancellation.Dispose();
-            (Cache as IDisposable)?.Dispose();
-            (Network as IDisposable).Dispose();
+            this.cancellation.Dispose();
+            (this.cache as IDisposable)?.Dispose();
+            (this.network as IDisposable)?.Dispose();
+        }
+
+        public Task WriteSettingsAsync(string file)
+        {
+            return this.settings.SaveAsync(file);
         }
 
         /// <summary>
@@ -136,8 +148,8 @@ namespace Mikodev.Links.Internal
             var message = new NotifyTextMessage();
             message.SetObject(text);
             var packetData = new { messageId = message.MessageId, text, };
-            await Dispatcher.InvokeAsync(() => AppendMessage((NotifyContractProfile)profile, message));
-            await Network.SendAsync((NotifyContractProfile)profile, message, "link.message.text", packetData);
+            await this.dispatcher.InvokeAsync(() => this.InsertMessageAsync((NotifyClientProfile)profile, message));
+            await this.network.PutAsync((NotifyClientProfile)profile, message, "link.message.text", packetData);
         }
 
         /// <summary>
@@ -145,23 +157,23 @@ namespace Mikodev.Links.Internal
         /// </summary>
         public async Task PutImageAsync(Profile profile, string file)
         {
-            var result = await Cache.SetCacheAsync(new FileInfo(file), cancellation.Token);
+            var result = await this.cache.SetCacheAsync(new FileInfo(file), this.cancellation.Token);
             var message = new NotifyImageMessage() { ImageHash = result.Hash };
             message.SetObject(result.FileInfo.FullName);
             var packetData = new { messageId = message.MessageId, imageHash = result.Hash, };
-            await Dispatcher.InvokeAsync(() => AppendMessage((NotifyContractProfile)profile, message));
-            await Network.SendAsync((NotifyContractProfile)profile, message, "link.message.image-hash", packetData);
+            await this.dispatcher.InvokeAsync(() => this.InsertMessageAsync((NotifyClientProfile)profile, message));
+            await this.network.PutAsync((NotifyClientProfile)profile, message, "link.message.image-hash", packetData);
         }
 
         public async Task SetProfileImageAsync(string file)
         {
-            var result = await Cache.SetCacheAsync(new FileInfo(file), cancellation.Token);
+            var result = await this.cache.SetCacheAsync(new FileInfo(file), this.cancellation.Token);
             var profile = this.profile;
             profile.ImageHash = result.Hash;
             profile.SetImagePath(result.FileInfo.FullName);
         }
 
-        private async Task AppendMessage(NotifyContractProfile profile, NotifyPropertyMessage message)
+        private async Task InsertMessageAsync(NotifyClientProfile profile, NotifyPropertyMessage message)
         {
             var messages = profile.MessageCollection;
             if (messages.Any(r => r.MessageId == message.MessageId))
@@ -176,7 +188,7 @@ namespace Mikodev.Links.Internal
                 Reference = message.Reference.ToString(),
                 Object = message is NotifyTextMessage text ? (string)text.Object : ((NotifyImageMessage)message).ImageHash,
             };
-            await Storage.StoreMessagesAsync(new[] { model });
+            await this.storage.StoreMessagesAsync(new[] { model });
             if (message.Reference != MessageReference.Remote)
                 return;
             var eventArgs = new MessageEventArgs(profile, message);
@@ -190,19 +202,10 @@ namespace Mikodev.Links.Internal
         {
             var success = parameter.SenderProfile != null;
             if (success)
-                await Dispatcher.InvokeAsync(() => AppendMessage(parameter.SenderProfile, message));
+                await this.dispatcher.InvokeAsync(() => this.InsertMessageAsync(parameter.SenderProfile, message));
             var data = new { status = success ? "ok" : "refused" };
             await parameter.ResponseAsync(data);
             return success;
-        }
-
-        public async Task HandleTextAsync(IRequest parameter)
-        {
-            var data = parameter.Packet.Data;
-            var message = new NotifyTextMessage(data["messageId"].As<string>());
-            message.SetObject(data["text"].As<string>());
-            message.SetStatus(MessageStatus.Success);
-            _ = await ResponseAsync(parameter, message);
         }
 
         public async Task<IEnumerable<Message>> GetMessagesAsync(Profile profile)
@@ -229,7 +232,7 @@ namespace Mikodev.Links.Internal
                     var imageHash = item.Object;
                     message.ImageHash = imageHash;
                     message.SetStatus(MessageStatus.Success);
-                    if (Cache.TryGetCache(imageHash, out var info))
+                    if (this.cache.TryGetCache(imageHash, out var info))
                         message.SetObject(info.FullName);
                     return message;
                 }
@@ -243,10 +246,19 @@ namespace Mikodev.Links.Internal
                 list.ForEach(x => collection.Insert(0, x));
             }
 
-            var messages = ((NotifyContractProfile)profile).MessageCollection;
-            var list = await Storage.QueryMessagesAsync(profile.ProfileId, 30);
+            var messages = ((NotifyClientProfile)profile).MessageCollection;
+            var list = await this.storage.QueryMessagesAsync(profile.ProfileId, 30);
             Migrate(messages, list);
             return messages;
+        }
+
+        public async Task HandleTextAsync(IRequest parameter)
+        {
+            var data = parameter.Packet.Data;
+            var message = new NotifyTextMessage(data["messageId"].As<string>());
+            message.SetObject(data["text"].As<string>());
+            message.SetStatus(MessageStatus.Success);
+            _ = await this.ResponseAsync(parameter, message);
         }
 
         public async Task HandleImageAsync(IRequest parameter)
@@ -258,10 +270,10 @@ namespace Mikodev.Links.Internal
 
             try
             {
-                if (await ResponseAsync(parameter, message) == false)
+                if (await this.ResponseAsync(parameter, message) == false)
                     return;
-                var fileInfo = await Cache.GetCacheAsync(imageHash, parameter.SenderProfile.GetTcpEndPoint(), cancellation.Token);
-                await Dispatcher.InvokeAsync(() =>
+                var fileInfo = await this.cache.GetCacheAsync(imageHash, parameter.SenderProfile.GetTcpEndPoint(), this.cancellation.Token);
+                await this.dispatcher.InvokeAsync(() =>
                 {
                     message.SetObject(fileInfo.FullName);
                     message.SetStatus(MessageStatus.Success);
@@ -269,7 +281,7 @@ namespace Mikodev.Links.Internal
             }
             catch (Exception)
             {
-                await Dispatcher.InvokeAsync(() => message.SetStatus(MessageStatus.Aborted));
+                await this.dispatcher.InvokeAsync(() => message.SetStatus(MessageStatus.Aborted));
                 throw;
             }
         }

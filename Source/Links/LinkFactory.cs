@@ -10,7 +10,6 @@ namespace Mikodev.Links
     {
         public static async Task<IClient> CreateClientAsync(IDispatcher dispatcher, IStorage storage, Option<string> settingsFile)
         {
-            await storage.InitializeAsync();
             var settings = settingsFile.IsSome()
                 ? await Settings.LoadAsync(settingsFile.Unwrap())
                 : new Settings();

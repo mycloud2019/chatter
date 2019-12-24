@@ -22,8 +22,8 @@ namespace Mikodev.Links.Abstractions.Models
         {
             if (string.IsNullOrEmpty(hash))
                 throw new ArgumentException("File hash can not be null or empty!", nameof(hash));
-            Hash = hash;
-            FileInfo = fileInfo ?? throw new ArgumentNullException(nameof(fileInfo));
+            this.Hash = hash;
+            this.FileInfo = fileInfo ?? throw new ArgumentNullException(nameof(fileInfo));
         }
     }
 }

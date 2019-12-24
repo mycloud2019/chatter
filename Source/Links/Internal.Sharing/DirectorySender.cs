@@ -7,8 +7,8 @@ namespace Mikodev.Links.Internal.Sharing
 {
     internal sealed class DirectorySender : DirectoryObject, ISharingDirectorySender
     {
-        public DirectorySender(IClient client, Profile profile, Stream stream, string fullPath) : base(client, stream, new NotifyDirectorySharingViewer(profile, Path.GetDirectoryName(fullPath), fullPath)) { }
+        public DirectorySender(Context context, Profile profile, Stream stream, string fullPath) : base(context, stream, new NotifyDirectorySharingViewer(profile, Path.GetDirectoryName(fullPath), fullPath)) { }
 
-        protected override Task InvokeAsync() => PutDirectoryAsync(Viewer.FullName);
+        protected override Task InvokeAsync() => this.PutDirectoryAsync(this.Viewer.FullName);
     }
 }

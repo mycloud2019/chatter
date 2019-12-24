@@ -10,63 +10,57 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links.Internal
 {
-    internal partial class Client
+    internal sealed partial class Client
     {
         public event SharingHandler<ISharingFileReceiver> NewFileReceiver;
 
         public event SharingHandler<ISharingDirectoryReceiver> NewDirectoryReceiver;
 
-        private void Initial(INetwork network)
-        {
-            network.RegisterHandler("link.sharing.file", HandleFileAsync);
-            network.RegisterHandler("link.sharing.directory", HandleDirectoryAsync);
-        }
-
         public async Task PutFileAsync(Profile profile, string file, SharingHandler<ISharingFileSender> handler)
         {
-            if (profile == null || handler == null || !(profile is NotifyContractProfile receiver))
+            if (profile == null || handler == null || !(profile is NotifyClientProfile receiver))
                 throw new ArgumentNullException();
             var fileInfo = new FileInfo(file);
             if (!fileInfo.Exists)
                 throw new FileNotFoundException("File not found!", file);
             var length = fileInfo.Length;
             var packet = new { name = fileInfo.Name, length };
-            _ = await Network.ConnectAsync("link.sharing.file", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
+            _ = await this.network.ConnectAsync("link.sharing.file", packet, receiver.GetTcpEndPoint(), async stream =>
             {
-                var result = await stream.ReadBlockWithHeaderAsync(Settings.TcpBufferLimits, CancellationToken);
-                var data = new Token(Generator, result);
+                var result = await stream.ReadBlockWithHeaderAsync(this.settings.TcpBufferLimits, this.cancellationToken);
+                var data = new Token(this.generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new NetworkException(NetworkError.InvalidData);
-                using (var sender = new FileSender(this, receiver, stream, fileInfo.FullName, length))
+                using (var sender = new FileSender(this.context, receiver, stream, fileInfo.FullName, length))
                 {
-                    await Dispatcher.InvokeAsync(() => handler.Invoke(sender));
+                    await this.dispatcher.InvokeAsync(() => handler.Invoke(sender));
                     await sender.LoopAsync();
                 }
                 return new Unit();
-            });
+            }, this.cancellationToken);
         }
 
         public async Task PutDirectoryAsync(Profile profile, string directory, SharingHandler<ISharingDirectorySender> handler)
         {
-            if (profile == null || handler == null || !(profile is NotifyContractProfile receiver))
+            if (profile == null || handler == null || !(profile is NotifyClientProfile receiver))
                 throw new ArgumentNullException();
             var directoryInfo = new DirectoryInfo(directory);
             if (!directoryInfo.Exists)
                 throw new DirectoryNotFoundException("Directory not found!");
             var packet = new { name = directoryInfo.Name };
-            _ = await Network.ConnectAsync("link.sharing.directory", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
+            _ = await this.network.ConnectAsync("link.sharing.directory", packet, receiver.GetTcpEndPoint(), async stream =>
             {
-                var result = await stream.ReadBlockWithHeaderAsync(Settings.TcpBufferLimits, CancellationToken);
-                var data = new Token(Generator, result);
+                var result = await stream.ReadBlockWithHeaderAsync(this.settings.TcpBufferLimits, this.cancellationToken);
+                var data = new Token(this.generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new NetworkException(NetworkError.InvalidData);
-                using (var sender = new DirectorySender(this, receiver, stream, directoryInfo.FullName))
+                using (var sender = new DirectorySender(this.context, receiver, stream, directoryInfo.FullName))
                 {
-                    await Dispatcher.InvokeAsync(() => handler.Invoke(sender));
+                    await this.dispatcher.InvokeAsync(() => handler.Invoke(sender));
                     await sender.LoopAsync();
                 }
                 return new Unit();
-            });
+            }, this.cancellationToken);
         }
 
         private async Task HandleFileAsync(IRequest parameter)
@@ -78,10 +72,10 @@ namespace Mikodev.Links.Internal
             var data = parameter.Packet.Data;
             var name = data["name"].As<string>();
             var length = data["length"].As<long>();
-            using (var receiver = new FileReceiver(this, profile, parameter.Stream, name, length))
+            using (var receiver = new FileReceiver(this.context, profile, parameter.Stream, name, length))
             {
                 await parameter.ResponseAsync(new { status = "wait" });
-                await Dispatcher.InvokeAsync(() => handler.Invoke(receiver));
+                await this.dispatcher.InvokeAsync(() => handler.Invoke(receiver));
                 await receiver.LoopAsync();
             }
         }
@@ -94,10 +88,10 @@ namespace Mikodev.Links.Internal
                 return;
             var data = parameter.Packet.Data;
             var name = data["name"].As<string>();
-            using (var receiver = new DirectoryReceiver(this, profile, parameter.Stream, name))
+            using (var receiver = new DirectoryReceiver(this.context, profile, parameter.Stream, name))
             {
                 await parameter.ResponseAsync(new { status = "wait" });
-                await Dispatcher.InvokeAsync(() => handler.Invoke(receiver));
+                await this.dispatcher.InvokeAsync(() => handler.Invoke(receiver));
                 await receiver.LoopAsync();
             }
         }

@@ -15,53 +15,53 @@ namespace Mikodev.Links.Implementations
     {
         private readonly IPEndPoint endpoint;
 
-        private readonly Client client;
-
         private readonly Network network;
+
+        private readonly IGenerator generator;
 
         public NetworkType NetworkType { get; }
 
         public Packet Packet { get; }
 
-        public NotifyContractProfile SenderProfile { get; }
+        public NotifyClientProfile SenderProfile { get; }
 
-        public IPAddress IPAddress => endpoint.Address;
+        public IPAddress IPAddress => this.endpoint.Address;
 
         public Stream Stream { get; }
 
         public CancellationToken CancellationToken { get; }
 
-        private Request(NetworkType networkType, Client client, Network network, byte[] buffer, IPEndPoint endpoint, Stream stream, CancellationToken cancellationToken)
+        private Request(NetworkType networkType, Context context, Network network, byte[] buffer, IPEndPoint endpoint, Stream stream, CancellationToken cancellationToken)
         {
             Debug.Assert(endpoint != null);
             Debug.Assert(networkType != NetworkType.Tcp || stream != null);
             this.endpoint = endpoint;
-            this.client = client;
+            this.generator = context.Generator;
             this.network = network;
 
-            NetworkType = networkType;
-            Stream = stream;
-            Packet = new Packet(client.Generator, buffer);
-            CancellationToken = cancellationToken;
-            SenderProfile = client.Contracts.FindProfile(Packet.SenderId);
+            this.NetworkType = networkType;
+            this.Stream = stream;
+            this.Packet = new Packet(this.generator, buffer);
+            this.CancellationToken = cancellationToken;
+            this.SenderProfile = context.ProfileProvider.GetProfileOrDefault(this.Packet.SenderId);
         }
 
         public async Task ResponseAsync(object data)
         {
-            if (NetworkType == NetworkType.Tcp)
-                await Stream.WriteWithHeaderAsync(client.Generator.Encode(data), CancellationToken);
+            if (this.NetworkType == NetworkType.Tcp)
+                await this.Stream.WriteWithHeaderAsync(this.generator.Encode(data), this.CancellationToken);
             else
-                await network.ResponseAsync(Packet.PacketId, data, endpoint);
+                await this.network.ResponseAsync(this.Packet.PacketId, data, this.endpoint);
         }
 
-        public static Request CreateUdpParameter(Client client, byte[] buffer, IPEndPoint endpoint, Network network)
+        public static Request CreateUdpParameter(Context context, byte[] buffer, IPEndPoint endpoint, Network network)
         {
-            return new Request(NetworkType.Udp, client, network, buffer, endpoint, null, CancellationToken.None);
+            return new Request(NetworkType.Udp, context, network, buffer, endpoint, null, CancellationToken.None);
         }
 
-        public static Request CreateTcpParameter(Client client, byte[] buffer, IPEndPoint endpoint, Stream stream, CancellationToken cancellationToken)
+        public static Request CreateTcpParameter(Context context, byte[] buffer, IPEndPoint endpoint, Stream stream, CancellationToken cancellationToken)
         {
-            return new Request(NetworkType.Tcp, client, null, buffer, endpoint, stream, cancellationToken);
+            return new Request(NetworkType.Tcp, context, null, buffer, endpoint, stream, cancellationToken);
         }
     }
 }

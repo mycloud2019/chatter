@@ -29,13 +29,13 @@ namespace Mikodev.Links.Implementations
 
         private readonly string extension = ".png";
 
-        public Cache(Settings settings, INetwork network)
+        public Cache(Context context, INetwork network)
         {
-            Debug.Assert(settings != null);
+            Debug.Assert(context != null);
             Debug.Assert(network != null);
             this.network = network;
-            cachepath = Path.GetFullPath(settings.CacheDirectory);
-            network.RegisterHandler("link.get-cache", HandleCacheAsync);
+            this.cachepath = Path.GetFullPath(context.Settings.CacheDirectory);
+            network.RegisterHandler("link.get-cache", this.HandleCacheAsync);
         }
 
         private async Task<byte[]> CacheToFileAsync(Stream stream, string filename, CancellationToken token)
@@ -66,12 +66,12 @@ namespace Mikodev.Links.Implementations
 
         private async Task<HashInfo> CacheStreamAsync(Stream stream, CancellationToken token)
         {
-            var tempfile = Path.Combine(cachepath, $"cache@{Guid.NewGuid():N}");
+            var tempfile = Path.Combine(this.cachepath, $"cache@{Guid.NewGuid():N}");
             try
             {
-                var buffer = await CacheToFileAsync(stream, tempfile, token);
+                var buffer = await this.CacheToFileAsync(stream, tempfile, token);
                 var hash = BitConverter.ToString(buffer).Replace("-", string.Empty).ToLowerInvariant();
-                var fullpath = GetHashPath(hash);
+                var fullpath = this.GetHashPath(hash);
                 if (File.Exists(fullpath) == false)
                     File.Move(tempfile, fullpath);
                 return new HashInfo(hash, new FileInfo(fullpath));
@@ -87,7 +87,7 @@ namespace Mikodev.Links.Implementations
         {
             if (string.IsNullOrEmpty(hash))
                 throw new ArgumentException();
-            return Path.Combine(cachepath, hash + extension);
+            return Path.Combine(this.cachepath, hash + this.extension);
         }
 
         /// <summary>
@@ -99,29 +99,29 @@ namespace Mikodev.Links.Implementations
             Debug.Assert(endpoint != null);
 
             var data = new { hash };
-            return await network.ConnectAsync("link.get-cache", data, endpoint, token, async stream =>
+            return await this.network.ConnectAsync("link.get-cache", data, endpoint, async stream =>
             {
                 var header = new byte[sizeof(int)];
                 await stream.ReadBlockAsync(header, token);
                 var length = BitConverter.ToInt32(header, 0);
                 if (length < 0)
                     throw new InvalidOperationException();
-                var result = await CacheStreamAsync(stream, token);
+                var result = await this.CacheStreamAsync(stream, token);
                 if (result.Hash != hash)
                     throw new InvalidOperationException();
                 return result.FileInfo;
-            });
+            }, token);
         }
 
         public async Task<HashInfo> SetCacheAsync(FileInfo fileInfo, CancellationToken token)
         {
             using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return await CacheStreamAsync(stream, token);
+                return await this.CacheStreamAsync(stream, token);
         }
 
         public bool TryGetCache(string hash, out FileInfo fileInfo)
         {
-            var path = GetHashPath(hash);
+            var path = this.GetHashPath(hash);
             var flag = File.Exists(path);
             fileInfo = flag ? new FileInfo(path) : null;
             return flag;
@@ -133,24 +133,24 @@ namespace Mikodev.Links.Implementations
                 throw new ArgumentException("File hash can not be null or empty!", nameof(hash));
             if (endpoint is null)
                 throw new ArgumentNullException(nameof(endpoint));
-            if (TryGetCache(hash, out var fullpath))
+            if (this.TryGetCache(hash, out var fullpath))
                 return fullpath;
-            var task = completionManager.Create(requestTimeout, hash, out var created, token);
+            var task = this.completionManager.Create(this.requestTimeout, hash, out var created, token);
             if (created)
-                _ = Task.Run(() => RequestAsync(hash, endpoint, token)).ContinueWith(x => completionManager.SetResult(hash, x.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
+                _ = Task.Run(() => this.RequestAsync(hash, endpoint, token)).ContinueWith(x => this.completionManager.SetResult(hash, x.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
             return await task;
         }
 
         public void Dispose()
         {
-            (completionManager as IDisposable)?.Dispose();
+            (this.completionManager as IDisposable)?.Dispose();
         }
 
         public async Task HandleCacheAsync(IRequest parameter)
         {
             var data = parameter.Packet.Data;
             var hash = data["hash"].As<string>();
-            var path = GetHashPath(hash);
+            var path = this.GetHashPath(hash);
             var stream = parameter.Stream;
             using (var filestream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {

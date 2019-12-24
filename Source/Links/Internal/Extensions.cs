@@ -92,22 +92,17 @@ namespace Mikodev.Links.Internal
             return result;
         }
 
-        public static bool IsNullOrEmpty(this string source)
-        {
-            return string.IsNullOrEmpty(source);
-        }
-
-        public static IPAddress GetBroadcastAddress(this UnicastIPAddressInformation information)
-        {
-            var maskBytes = information.IPv4Mask.GetAddressBytes();
-            var addressBytes = information.Address.GetAddressBytes();
-            for (var i = 0; i < 4; i++)
-                addressBytes[i] |= (byte)(~maskBytes[i]);
-            return new IPAddress(addressBytes);
-        }
-
         public static IPAddress[] GetBroadcastAddresses()
         {
+            static IPAddress GetBroadcastAddress(UnicastIPAddressInformation information)
+            {
+                var maskBytes = information.IPv4Mask.GetAddressBytes();
+                var addressBytes = information.Address.GetAddressBytes();
+                for (var i = 0; i < 4; i++)
+                    addressBytes[i] |= (byte)(~maskBytes[i]);
+                return new IPAddress(addressBytes);
+            }
+
             var inetAddresses = Dns.GetHostEntry(Dns.GetHostName())
                 .AddressList
                 .Where(x => x.AddressFamily == AddressFamily.InterNetwork)

@@ -33,10 +33,10 @@ namespace Mikodev.Links.Internal.Implementations
 
         protected void NotifyProperty<T>(ref T location, T value, [CallerMemberName] string property = null) => NotifyPropertyHelper.NotifyProperty(this, PropertyChanging, PropertyChanged, ref location, value, property);
 
-        public void SetStatus(MessageStatus status) => NotifyProperty(ref this.status, status, nameof(Status));
+        public void SetStatus(MessageStatus status) => this.NotifyProperty(ref this.status, status, nameof(this.Status));
 
-        public void SetObject(object @object) => NotifyProperty(ref this.@object, @object, nameof(Object));
+        public void SetObject(object @object) => this.NotifyProperty(ref this.@object, @object, nameof(this.Object));
 
-        public override string ToString() => $"{nameof(NotifyPropertyMessage)}(Id: {MessageId}, DateTime: {DateTime:u})";
+        public override string ToString() => $"{nameof(NotifyPropertyMessage)}(Id: {this.MessageId}, DateTime: {this.DateTime:u})";
     }
 }

@@ -27,12 +27,12 @@ namespace Mikodev.Links.Internal
         public Packet(IGenerator generator, byte[] buffer)
         {
             var token = new Token(generator, buffer);
-            PacketId = token["packetId", nothrow: true]?.As<string>();
-            Data = token["data", nothrow: true];
-            Path = token["path"].As<string>();
-            SenderId = token["senderId"].As<string>();
+            this.PacketId = token["packetId", nothrow: true]?.As<string>();
+            this.Data = token["data", nothrow: true];
+            this.Path = token["path"].As<string>();
+            this.SenderId = token["senderId"].As<string>();
         }
 
-        public override string ToString() => $"{nameof(Packet)}(Sender: {SenderId}, Path: {Path})";
+        public override string ToString() => $"{nameof(Packet)}(Sender: {this.SenderId}, Path: {this.Path})";
     }
 }

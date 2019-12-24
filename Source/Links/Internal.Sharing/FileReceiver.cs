@@ -9,12 +9,12 @@ namespace Mikodev.Links.Internal.Sharing
     {
         private readonly TaskCompletionSource<bool> completion = new TaskCompletionSource<bool>();
 
-        public FileReceiver(IClient client, Profile profile, Stream stream, string name, long length) : base(client, stream, new NotifyFileSharingViewer(profile, name, name, length)) { }
+        public FileReceiver(Context context, Profile profile, Stream stream, string name, long length) : base(context, stream, new NotifyFileSharingViewer(profile, name, name, length)) { }
 
-        public void Accept(bool flag) => completion.SetResult(flag);
+        public void Accept(bool flag) => this.completion.SetResult(flag);
 
-        public Task<bool> WaitForAcceptAsync() => completion.Task;
+        public Task<bool> WaitForAcceptAsync() => this.completion.Task;
 
-        protected override Task InvokeAsync() => GetFileAsync(Viewer.FullName, Viewer.Length);
+        protected override Task InvokeAsync() => this.GetFileAsync(this.Viewer.FullName, this.Viewer.Length);
     }
 }

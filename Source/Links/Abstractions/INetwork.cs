@@ -11,10 +11,10 @@ namespace Mikodev.Links.Abstractions
     {
         void RegisterHandler(string path, Func<IRequest, Task> func);
 
-        Task SendAsync(NotifyContractProfile profile, NotifyPropertyMessage message, string path, object data);
+        Task PutAsync(NotifyClientProfile profile, NotifyPropertyMessage message, string path, object data);
 
         Task BroadcastAsync(string path, object data);
 
-        Task<T> ConnectAsync<T>(string path, object data, IPEndPoint endpoint, CancellationToken token, Func<Stream, Task<T>> func);
+        Task<T> ConnectAsync<T>(string path, object data, IPEndPoint endpoint, Func<Stream, Task<T>> func, CancellationToken token);
     }
 }

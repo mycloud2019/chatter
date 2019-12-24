@@ -20,7 +20,7 @@ namespace Mikodev.Links.Abstractions
 
         IPAddress IPAddress { get; }
 
-        NotifyContractProfile SenderProfile { get; }
+        NotifyClientProfile SenderProfile { get; }
 
         Task ResponseAsync(object data);
     }

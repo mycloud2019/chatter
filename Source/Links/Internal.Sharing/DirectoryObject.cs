@@ -1,5 +1,4 @@
 ﻿using Mikodev.Binary;
-using Mikodev.Links.Abstractions;
 using Mikodev.Links.Internal.Implementations;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -10,21 +9,21 @@ namespace Mikodev.Links.Internal.Sharing
 {
     internal abstract class DirectoryObject : SharingObject
     {
-        protected DirectoryObject(IClient client, Stream stream, NotifyDirectorySharingViewer viewer) : base(client, stream, viewer) { }
+        protected DirectoryObject(Context context, Stream stream, NotifyDirectorySharingViewer viewer) : base(context, stream, viewer) { }
 
         protected async Task PutDirectoryAsync(string path)
         {
             async Task PutAsync(DirectoryInfo directoryInfo, ImmutableList<string> relative)
             {
-                var head = Generator.Encode(new { type = "directory", path = relative });
-                await Stream.WriteWithHeaderAsync(head, CancellationToken);
+                var head = this.Generator.Encode(new { type = "directory", path = relative });
+                await this.Stream.WriteWithHeaderAsync(head, this.CancellationToken);
 
                 foreach (var file in directoryInfo.GetFiles())
                 {
                     var length = file.Length;
-                    var data = Generator.Encode(new { type = "file", name = file.Name, length });
-                    await Stream.WriteWithHeaderAsync(data, CancellationToken);
-                    await PutFileAsync(file.FullName, length);
+                    var data = this.Generator.Encode(new { type = "file", name = file.Name, length });
+                    await this.Stream.WriteWithHeaderAsync(data, this.CancellationToken);
+                    await this.PutFileAsync(file.FullName, length);
                 }
 
                 foreach (var directory in directoryInfo.GetDirectories())
@@ -34,8 +33,8 @@ namespace Mikodev.Links.Internal.Sharing
             }
 
             await PutAsync(new DirectoryInfo(path), ImmutableList<string>.Empty);
-            var tail = Generator.Encode(new { type = "end" });
-            await Stream.WriteWithHeaderAsync(tail, CancellationToken);
+            var tail = this.Generator.Encode(new { type = "end" });
+            await this.Stream.WriteWithHeaderAsync(tail, this.CancellationToken);
         }
 
         protected async Task GetDirectoryAsync(string path)
@@ -45,8 +44,8 @@ namespace Mikodev.Links.Internal.Sharing
 
             while (true)
             {
-                var data = await Stream.ReadBlockWithHeaderAsync(Settings.TcpBufferLimits, CancellationToken);
-                var token = new Token(Generator, data);
+                var data = await this.Stream.ReadBlockWithHeaderAsync(this.Settings.TcpBufferLimits, this.CancellationToken);
+                var token = new Token(this.Generator, data);
                 var type = token["type"].As<string>();
 
                 switch (type)
@@ -62,7 +61,7 @@ namespace Mikodev.Links.Internal.Sharing
                         var name = token["name"].As<string>();
                         var length = token["length"].As<long>();
                         var fullName = Path.Combine(current, name);
-                        await GetFileAsync(fullName, length);
+                        await this.GetFileAsync(fullName, length);
                         break;
 
                     case "end":

@@ -10,16 +10,16 @@ namespace Mikodev.Links.Internal
 
         public NetworkException(NetworkError error) : this(error, GetMessage(error)) { }
 
-        public NetworkException(NetworkError error, string message) : base(message) => ErrorCode = error;
+        public NetworkException(NetworkError error, string message) : base(message) => this.ErrorCode = error;
 
         public NetworkException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            ErrorCode = (NetworkError)info.GetInt32(nameof(ErrorCode));
+            this.ErrorCode = (NetworkError)info.GetInt32(nameof(this.ErrorCode));
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue(nameof(ErrorCode), (int)ErrorCode);
+            info.AddValue(nameof(this.ErrorCode), (int)this.ErrorCode);
             base.GetObjectData(info, context);
         }
 

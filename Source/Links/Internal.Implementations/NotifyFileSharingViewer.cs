@@ -13,9 +13,9 @@ namespace Mikodev.Links.Internal.Implementations
                 throw new ArgumentNullException(nameof(fullName));
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length));
-            SetName(name);
-            SetFullName(fullName);
-            SetLength(length);
+            this.SetName(name);
+            this.SetFullName(fullName);
+            this.SetLength(length);
         }
     }
 }

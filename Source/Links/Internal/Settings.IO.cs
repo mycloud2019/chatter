@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links.Internal
 {
-    internal partial class Settings
+    internal sealed partial class Settings
     {
         private static readonly int SettingsMaximumCharacters = 32 * 1024;
 
@@ -52,20 +52,20 @@ namespace Mikodev.Links.Internal
             if (broadcastUris.Length == 0)
                 throw new InvalidDataException("No available broadcast address!");
 
-            ClientId = id;
-            ClientName = name;
-            ClientText = text;
-            ClientImageHash = imageHash;
+            this.ClientId = id;
+            this.ClientName = name;
+            this.ClientText = text;
+            this.ClientImageHash = imageHash;
 
-            TcpEndPoint = new IPEndPoint(IPAddress.Any, tcpPort);
-            UdpEndPoint = new IPEndPoint(IPAddress.Any, udpPort);
-            BroadcastUris = broadcastUris;
+            this.TcpEndPoint = new IPEndPoint(IPAddress.Any, tcpPort);
+            this.UdpEndPoint = new IPEndPoint(IPAddress.Any, udpPort);
+            this.BroadcastUris = broadcastUris;
         }
 
         public string Save()
         {
-            Debug.Assert(!string.IsNullOrEmpty(ClientId));
-            Debug.Assert(BroadcastUris != null && BroadcastUris.Length > 0);
+            Debug.Assert(!string.IsNullOrEmpty(this.ClientId));
+            Debug.Assert(this.BroadcastUris != null && this.BroadcastUris.Length > 0);
 
             var client = new Dictionary<string, JsonValue>
             {
@@ -77,9 +77,9 @@ namespace Mikodev.Links.Internal
 
             var net = new Dictionary<string, JsonValue>
             {
-                ["tcp-port"] = TcpEndPoint.Port,
-                ["udp-port"] = UdpEndPoint.Port,
-                ["broadcast-uris"] = new JsonArray(BroadcastUris.Select(x => (JsonValue)x.OriginalString)),
+                ["tcp-port"] = this.TcpEndPoint.Port,
+                ["udp-port"] = this.UdpEndPoint.Port,
+                ["broadcast-uris"] = new JsonArray(this.BroadcastUris.Select(x => (JsonValue)x.OriginalString)),
             };
 
             var data = new JsonObject(new Dictionary<string, JsonValue>
@@ -122,7 +122,7 @@ namespace Mikodev.Links.Internal
         {
             using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
             using var writer = new StreamWriter(stream, Encoding.UTF8);
-            await SaveAsync(writer);
+            await this.SaveAsync(writer);
         }
     }
 }

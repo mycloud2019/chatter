@@ -11,8 +11,8 @@ namespace Mikodev.Links.Internal.Implementations
                 throw new ArgumentNullException(nameof(name));
             if (fullName is null)
                 throw new ArgumentNullException(nameof(fullName));
-            SetName(name);
-            SetFullName(fullName);
+            this.SetName(name);
+            this.SetFullName(fullName);
         }
     }
 }
