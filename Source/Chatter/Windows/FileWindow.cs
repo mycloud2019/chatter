@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Chatter.Windows
 {
-    public sealed class FileWindow : ShareWindow
+    public sealed class FileWindow : SharingWindow
     {
         private readonly SharingViewer viewer;
 

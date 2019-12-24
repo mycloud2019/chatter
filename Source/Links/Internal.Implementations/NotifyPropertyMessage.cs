@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using static Mikodev.Optional.Extensions;
 
-namespace Mikodev.Links.Internal.Messages
+namespace Mikodev.Links.Internal.Implementations
 {
-    internal abstract class NotifyMessage : Message, INotifyPropertyChanging, INotifyPropertyChanged
+    internal abstract class NotifyPropertyMessage : Message, INotifyPropertyChanging, INotifyPropertyChanged
     {
         private static readonly Random random = new Random();
 
@@ -25,11 +25,11 @@ namespace Mikodev.Links.Internal.Messages
 
         public override object Object => this.@object;
 
-        protected NotifyMessage(string path) : base($"{DateTime.Now:yyyyMMddHHmmss}-{Interlocked.Increment(ref counter):x8}-{Lock(random, () => random.Next()):x8}", path, DateTime.Now, MessageReference.Local) { }
+        protected NotifyPropertyMessage(string path) : base($"{DateTime.Now:yyyyMMddHHmmss}-{Interlocked.Increment(ref counter):x8}-{Lock(random, () => random.Next()):x8}", path, DateTime.Now, MessageReference.Local) { }
 
-        protected NotifyMessage(string messageId, string path) : base(messageId, path, DateTime.Now, MessageReference.Remote) { }
+        protected NotifyPropertyMessage(string messageId, string path) : base(messageId, path, DateTime.Now, MessageReference.Remote) { }
 
-        protected NotifyMessage(string messageId, string path, DateTime dateTime, MessageReference reference) : base(messageId, path, dateTime, reference) { }
+        protected NotifyPropertyMessage(string messageId, string path, DateTime dateTime, MessageReference reference) : base(messageId, path, dateTime, reference) { }
 
         protected void NotifyProperty<T>(ref T location, T value, [CallerMemberName] string property = null) => NotifyPropertyHelper.NotifyProperty(this, PropertyChanging, PropertyChanged, ref location, value, property);
 
@@ -37,6 +37,6 @@ namespace Mikodev.Links.Internal.Messages
 
         public void SetObject(object @object) => NotifyProperty(ref this.@object, @object, nameof(Object));
 
-        public override string ToString() => $"{nameof(NotifyMessage)}(Id: {MessageId}, DateTime: {DateTime:u})";
+        public override string ToString() => $"{nameof(NotifyPropertyMessage)}(Id: {MessageId}, DateTime: {DateTime:u})";
     }
 }

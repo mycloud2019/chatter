@@ -1,7 +1,7 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
 using Mikodev.Links.Internal;
-using Mikodev.Links.Internal.Messages;
+using Mikodev.Links.Internal.Implementations;
 using Mikodev.Tasks.Abstractions;
 using Mikodev.Tasks.TaskCompletionManagement;
 using System;
@@ -25,7 +25,7 @@ namespace Mikodev.Links.Implementations
 
         private readonly CancellationToken cancellationToken;
 
-        private readonly Configurations configurations;
+        private readonly Settings settings;
 
         private readonly Client client;
 
@@ -35,28 +35,28 @@ namespace Mikodev.Links.Implementations
 
         private readonly ConcurrentDictionary<string, Func<IRequest, Task>> funcs = new ConcurrentDictionary<string, Func<IRequest, Task>>();
 
-        internal Network(Client client)
+        public Network(Client client)
         {
             this.client = client;
             generator = client.Generator;
-            configurations = client.Configurations;
+            settings = client.Settings;
             cancellationToken = client.CancellationToken;
             RegisterHandler("link.async-result", HandleRequestAsync);
             Debug.Assert(generator != null);
-            Debug.Assert(configurations != null);
+            Debug.Assert(settings != null);
         }
 
-        internal void Initialize()
+        public void Initialize()
         {
-            var udpEndPoint = configurations.UdpEndPoint;
-            var tcpEndPoint = configurations.TcpEndPoint;
+            var udpEndPoint = settings.UdpEndPoint;
+            var tcpEndPoint = settings.TcpEndPoint;
 
             udpClient = new UdpClient(udpEndPoint) { EnableBroadcast = true };
             tcpListener = new TcpListener(tcpEndPoint);
             tcpListener.Start();
         }
 
-        internal Task LoopAsync()
+        public Task LoopAsync()
         {
             var tasks = new Task[]
             {
@@ -95,7 +95,7 @@ namespace Mikodev.Links.Implementations
             {
                 stream = result.GetStream();
                 var endpoint = (IPEndPoint)result.Client.RemoteEndPoint;
-                var buffer = await stream.ReadBlockWithHeaderAsync(configurations.TcpBufferLimits, cancel.Token).TimeoutAfter(configurations.TcpTimeout);
+                var buffer = await stream.ReadBlockWithHeaderAsync(settings.TcpBufferLimits, cancel.Token).TimeoutAfter(settings.TcpTimeout);
                 var parameter = Request.CreateTcpParameter(client, buffer, endpoint, stream, cancel.Token);
                 await HandleConnectionAsync(parameter);
             }
@@ -119,22 +119,22 @@ namespace Mikodev.Links.Implementations
         {
             return generator.Encode(new
             {
-                senderId = configurations.ClientId,
+                senderId = settings.ClientId,
                 path,
                 data,
             });
         }
 
-        internal async Task<TcpClient> CreateClientAsync(string path, object data, IPEndPoint endpoint, CancellationToken cancellationToken)
+        public async Task<TcpClient> CreateClientAsync(string path, object data, IPEndPoint endpoint, CancellationToken cancellationToken)
         {
             var packet = CreatePacket(path, data);
             var client = new TcpClient();
             var stream = default(Stream);
             try
             {
-                await client.ConnectAsync(endpoint.Address, endpoint.Port).TimeoutAfter(configurations.TcpConnectTimeout);
+                await client.ConnectAsync(endpoint.Address, endpoint.Port).TimeoutAfter(settings.TcpConnectTimeout);
                 stream = client.GetStream();
-                await stream.WriteWithHeaderAsync(packet, cancellationToken).TimeoutAfter(configurations.TcpTimeout);
+                await stream.WriteWithHeaderAsync(packet, cancellationToken).TimeoutAfter(settings.TcpTimeout);
                 return client;
             }
             catch (Exception)
@@ -152,7 +152,7 @@ namespace Mikodev.Links.Implementations
                     ? IPAddress.TryParse(uri.Host, out var address) && IPAddress.Broadcast.Equals(address)
                     : false;
 
-            var uris = configurations.BroadcastUris.ToList();
+            var uris = settings.BroadcastUris.ToList();
 
             while (true)
             {
@@ -210,23 +210,23 @@ namespace Mikodev.Links.Implementations
             var packet = new
             {
                 packetId,
-                senderId = configurations.ClientId,
+                senderId = settings.ClientId,
                 path,
                 data,
             };
             var buffer = generator.Encode(packet);
-            if (buffer.Length > configurations.UdpLengthLimits)
+            if (buffer.Length > settings.UdpLengthLimits)
                 throw new NetworkException(NetworkError.UdpPacketTooLarge);
             _ = await udpClient.SendAsync(buffer, buffer.Length, endpoint);
             return await task;
         }
 
-        internal Task ResponseAsync(string packetId, object data, IPEndPoint endpoint)
+        public Task ResponseAsync(string packetId, object data, IPEndPoint endpoint)
         {
             var packet = new
             {
                 packetId,
-                senderId = configurations.ClientId,
+                senderId = settings.ClientId,
                 path = "link.async-result",
                 data,
             };
@@ -234,7 +234,7 @@ namespace Mikodev.Links.Implementations
             return udpClient.SendAsync(buffer, buffer.Length, endpoint);
         }
 
-        public async Task SendAsync(ContractProfile profile, NotifyMessage message, string path, object packetData)
+        public async Task SendAsync(NotifyContractProfile profile, NotifyPropertyMessage message, string path, object packetData)
         {
             message.SetStatus(MessageStatus.Pending);
 
@@ -254,7 +254,7 @@ namespace Mikodev.Links.Implementations
             {
                 try
                 {
-                    var result = await RequestAsync(path, packetData, profile.GetUdpEndPoint(), configurations.UdpTimeout);
+                    var result = await RequestAsync(path, packetData, profile.GetUdpEndPoint(), settings.UdpTimeout);
                     if (Handled(result.Data))
                         return;
                 }
@@ -276,7 +276,7 @@ namespace Mikodev.Links.Implementations
             {
                 tcp = await CreateClientAsync(path, packetData, profile.GetTcpEndPoint(), cancel.Token);
                 stream = tcp.GetStream();
-                var buffer = await stream.ReadBlockWithHeaderAsync(configurations.TcpBufferLimits, cancel.Token).TimeoutAfter(configurations.TcpTimeout);
+                var buffer = await stream.ReadBlockWithHeaderAsync(settings.TcpBufferLimits, cancel.Token).TimeoutAfter(settings.TcpTimeout);
                 var token = new Token(generator, buffer);
                 if (Handled(token))
                     return;

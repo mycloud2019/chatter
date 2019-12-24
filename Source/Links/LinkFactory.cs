@@ -13,7 +13,7 @@ namespace Mikodev.Links
             await storage.InitializeAsync();
             var settings = settingsFile.IsSome()
                 ? await Settings.LoadAsync(settingsFile.Unwrap())
-                : Settings.Create();
+                : new Settings();
             return new Client(settings, dispatcher, storage);
         }
     }

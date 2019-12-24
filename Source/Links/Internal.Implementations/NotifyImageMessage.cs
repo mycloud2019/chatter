@@ -1,9 +1,9 @@
 ﻿using Mikodev.Links.Abstractions;
 using System;
 
-namespace Mikodev.Links.Internal.Messages
+namespace Mikodev.Links.Internal.Implementations
 {
-    internal sealed class NotifyImageMessage : NotifyMessage
+    internal sealed class NotifyImageMessage : NotifyPropertyMessage
     {
         public const string MessagePath = "message.image-hash";
 

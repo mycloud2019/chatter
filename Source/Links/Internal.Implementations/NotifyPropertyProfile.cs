@@ -3,9 +3,9 @@ using System.ComponentModel;
 using System.Net;
 using System.Runtime.CompilerServices;
 
-namespace Mikodev.Links.Internal
+namespace Mikodev.Links.Internal.Implementations
 {
-    internal abstract class NotifyProfile : Profile, INotifyPropertyChanging, INotifyPropertyChanged
+    internal abstract class NotifyPropertyProfile : Profile, INotifyPropertyChanging, INotifyPropertyChanged
     {
         private string name;
 
@@ -35,7 +35,7 @@ namespace Mikodev.Links.Internal
 
         public override IPAddress IPAddress => address;
 
-        protected NotifyProfile(string profileId) : base(profileId) { }
+        protected NotifyPropertyProfile(string profileId) : base(profileId) { }
 
         protected void NotifyProperty<T>(ref T location, T value, [CallerMemberName] string property = null) => NotifyPropertyHelper.NotifyProperty(this, PropertyChanging, PropertyChanged, ref location, value, property);
 

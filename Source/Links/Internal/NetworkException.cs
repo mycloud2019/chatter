@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Mikodev.Links.Internal
 {
     [Serializable]
-    internal class NetworkException : Exception
+    internal sealed class NetworkException : Exception
     {
         public NetworkError ErrorCode { get; }
 
@@ -12,7 +12,7 @@ namespace Mikodev.Links.Internal
 
         public NetworkException(NetworkError error, string message) : base(message) => ErrorCode = error;
 
-        protected NetworkException(SerializationInfo info, StreamingContext context) : base(info, context)
+        public NetworkException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             ErrorCode = (NetworkError)info.GetInt32(nameof(ErrorCode));
         }

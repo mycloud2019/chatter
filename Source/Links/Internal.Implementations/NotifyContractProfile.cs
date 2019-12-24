@@ -1,15 +1,12 @@
-﻿using Mikodev.Links.Internal.Messages;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Net;
 
-namespace Mikodev.Links.Internal
+namespace Mikodev.Links.Internal.Implementations
 {
-    internal sealed class ContractProfile : NotifyProfile
+    internal sealed class NotifyContractProfile : NotifyPropertyProfile
     {
         private string imageHash;
-
-        public ContractProfileType ProfileType { get; }
 
         public DateTime LastOnlineDateTime { get; set; }
 
@@ -21,14 +18,14 @@ namespace Mikodev.Links.Internal
 
         public string RemoteImageHash { get; set; }
 
-        public ObservableCollection<NotifyMessage> MessageCollection { get; } = new ObservableCollection<NotifyMessage>();
+        public ObservableCollection<NotifyPropertyMessage> MessageCollection { get; } = new ObservableCollection<NotifyPropertyMessage>();
 
         public IPEndPoint GetTcpEndPoint() => new IPEndPoint(IPAddress, TcpPort);
 
         public IPEndPoint GetUdpEndPoint() => new IPEndPoint(IPAddress, UdpPort);
 
-        public ContractProfile(string profileId, ContractProfileType profileType) : base(profileId) { ProfileType = profileType; }
+        public NotifyContractProfile(string profileId) : base(profileId) { }
 
-        public override string ToString() => $"{nameof(ContractProfile)}(Id: {ProfileId}, Name: {Name})";
+        public override string ToString() => $"{nameof(NotifyContractProfile)}(Id: {ProfileId}, Name: {Name})";
     }
 }

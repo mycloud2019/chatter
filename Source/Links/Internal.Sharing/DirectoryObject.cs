@@ -1,5 +1,6 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
+using Mikodev.Links.Internal.Implementations;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -7,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Mikodev.Links.Internal.Sharing
 {
-    internal abstract class DirectoryObject : ShareObject
+    internal abstract class DirectoryObject : SharingObject
     {
-        protected DirectoryObject(IClient client, Stream stream, DirectorySharingViewer viewer) : base(client, stream, viewer) { }
+        protected DirectoryObject(IClient client, Stream stream, NotifyDirectorySharingViewer viewer) : base(client, stream, viewer) { }
 
         protected async Task PutDirectoryAsync(string path)
         {
@@ -44,7 +45,7 @@ namespace Mikodev.Links.Internal.Sharing
 
             while (true)
             {
-                var data = await Stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
+                var data = await Stream.ReadBlockWithHeaderAsync(Settings.TcpBufferLimits, CancellationToken);
                 var token = new Token(Generator, data);
                 var type = token["type"].As<string>();
 

@@ -1,51 +1,44 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using System.Net;
 
 namespace Mikodev.Links.Internal
 {
-    internal sealed class Settings
+    internal sealed partial class Settings
     {
-        internal Configurations Configurations { get; private set; }
+        public Settings() { }
 
-        internal Settings(Configurations configurations)
-        {
-            Debug.Assert(configurations != null);
-            Configurations = configurations;
-        }
+        public string ClientId { get; set; } = Guid.NewGuid().ToString("N");
 
-        public static Settings Create() => new Settings(new Configurations());
+        public string ClientName { get; set; } = string.Empty;
 
-        public static async Task<Settings> LoadAsync(TextReader reader)
-        {
-            var buffer = new char[Configurations.SettingsMaximumCharacters];
-            var length = await reader.ReadBlockAsync(buffer, 0, buffer.Length).TimeoutAfter(Configurations.SettingsIOTimeout);
-            var text = new string(buffer, 0, length);
-            var configurations = new Configurations();
-            configurations.Load(text);
-            return new Settings(configurations);
-        }
+        public string ClientText { get; set; } = "Hello, world!";
 
-        public static async Task<Settings> LoadAsync(string path)
-        {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-            return await LoadAsync(reader);
-        }
+        public string ClientImageHash { get; set; }
 
-        public async Task SaveAsync(TextWriter writer)
-        {
-            var item = Configurations;
-            var text = item.Save();
-            await writer.WriteAsync(text).TimeoutAfter(Configurations.SettingsIOTimeout);
-        }
+        public string CacheDirectory { get; set; } = "cache";
 
-        public async Task SaveAsync(string path)
-        {
-            using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using var writer = new StreamWriter(stream, Encoding.UTF8);
-            await SaveAsync(writer);
-        }
+        public string SharingDirectory { get; set; } = "sharing";
+
+        public IPEndPoint UdpEndPoint { get; set; } = new IPEndPoint(IPAddress.Any, 7470);
+
+        public IPEndPoint TcpEndPoint { get; set; } = new IPEndPoint(IPAddress.Any, 7470);
+
+        public Uri[] BroadcastUris { get; set; } = new[] { new Uri($"udp://{IPAddress.Broadcast}:{7470}") };
+
+        public TimeSpan BroadcastTaskDelay { get; set; } = TimeSpan.FromMilliseconds(3000);
+
+        public TimeSpan BackgroundTaskDelay { get; set; } = TimeSpan.FromMilliseconds(100);
+
+        public int TcpBufferLimits { get; set; } = 4 * 1024 * 1024;
+
+        public int UdpLengthLimits { get; set; } = 768;
+
+        public TimeSpan TcpTimeout { get; set; } = TimeSpan.FromSeconds(20);
+
+        public TimeSpan TcpConnectTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+        public TimeSpan UdpTimeout { get; set; } = TimeSpan.FromSeconds(1);
+
+        public TimeSpan ProfileOnlineTimeout { get; set; } = TimeSpan.FromSeconds(15);
     }
 }

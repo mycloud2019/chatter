@@ -2,7 +2,7 @@
 
 namespace Mikodev.Links.Internal.Sharing
 {
-    internal abstract partial class ShareObject
+    internal abstract partial class SharingObject
     {
         private struct Tick
         {

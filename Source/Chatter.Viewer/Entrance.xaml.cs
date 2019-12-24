@@ -1,11 +1,13 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Chatter.Viewer.Controls;
 using Mikodev.Links.Abstractions;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Disposables;
 
 namespace Chatter.Viewer
 {
@@ -34,6 +36,8 @@ namespace Chatter.Viewer
 
         private void Window_Opened(object sender, EventArgs e)
         {
+            _ = AddHandler(Button.ClickEvent, Button_Click);
+
             var client = App.CurrentClient;
             Debug.Assert(client != null);
             DataContext = client;
@@ -55,6 +59,20 @@ namespace Chatter.Viewer
             profile.UnreadCount = 0;
             App.CurrentProfile = profile;
             dialog.Child = new Dialog();
+        }
+
+        private async void Button_Click(object sender, RoutedEventArgs args)
+        {
+            var button = (Button)args.Source;
+            var tag = button.Tag as string;
+
+            button.IsEnabled = false;
+            using var _0 = Disposable.Create(() => button.IsEnabled = true);
+
+            if (tag == "modify")
+            {
+                await new Cover().ShowDialog(this);
+            }
         }
     }
 }

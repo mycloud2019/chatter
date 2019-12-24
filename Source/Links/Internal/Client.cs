@@ -2,7 +2,7 @@
 using Mikodev.Links.Abstractions;
 using Mikodev.Links.Data.Abstractions;
 using Mikodev.Links.Implementations;
-using Mikodev.Links.Internal.Messages;
+using Mikodev.Links.Internal.Implementations;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,35 +22,33 @@ namespace Mikodev.Links.Internal
 
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 
-        private readonly ContractProfile profile;
-
-        private readonly Settings settings;
+        private readonly NotifyContractProfile profile;
 
         private int status = None;
 
-        internal CancellationToken CancellationToken { get; }
+        public event EventHandler<MessageEventArgs> NewMessage;
 
-        internal IGenerator Generator { get; } = Binary.Generator.CreateDefault();
+        public CancellationToken CancellationToken { get; }
 
-        internal IStorage Storage { get; }
+        public IGenerator Generator { get; } = Binary.Generator.CreateDefault();
 
-        internal ICache Cache { get; }
+        public IStorage Storage { get; }
 
-        internal INetwork Network { get; }
+        public ICache Cache { get; }
 
-        internal IDispatcher Dispatcher { get; }
+        public INetwork Network { get; }
 
-        internal Contracts Contracts { get; }
+        public IDispatcher Dispatcher { get; }
 
-        internal Configurations Configurations { get; }
+        public Contracts Contracts { get; }
+
+        public Settings Settings { get; }
 
         public Profile Profile => profile;
 
         public IEnumerable<Profile> Profiles => Contracts.ProfileCollection;
 
-        public string ReceivingDirectory => Configurations.ShareDirectory;
-
-        public event EventHandler<MessageEventArgs> NewMessage;
+        public string ReceivingDirectory => Settings.SharingDirectory;
 
         public Client(Settings settings, IDispatcher dispatcher, IStorage storage)
         {
@@ -60,7 +58,6 @@ namespace Mikodev.Links.Internal
                 throw new ArgumentNullException(nameof(dispatcher));
             if (storage is null)
                 throw new ArgumentNullException(nameof(storage));
-            var environment = ((Settings)settings).Configurations;
             CancellationToken = cancellation.Token;
             Dispatcher = dispatcher;
             Storage = storage;
@@ -69,29 +66,28 @@ namespace Mikodev.Links.Internal
             {
                 var profile = this.profile;
                 Debug.Assert(sender == profile);
-                if (e.PropertyName == nameof(ContractProfile.Name))
-                    environment.ClientName = profile.Name;
-                else if (e.PropertyName == nameof(ContractProfile.Text))
-                    environment.ClientText = profile.Text;
-                else if (e.PropertyName == nameof(ContractProfile.ImageHash))
-                    environment.ClientImageHash = profile.ImageHash;
+                if (e.PropertyName == nameof(NotifyContractProfile.Name))
+                    settings.ClientName = profile.Name;
+                else if (e.PropertyName == nameof(NotifyContractProfile.Text))
+                    settings.ClientText = profile.Text;
+                else if (e.PropertyName == nameof(NotifyContractProfile.ImageHash))
+                    settings.ClientImageHash = profile.ImageHash;
             }
 
-            this.settings = settings;
-            Configurations = environment;
+            Settings = settings;
             Network = new Network(this);
             Contracts = new Contracts(this);
-            Cache = new Cache(Configurations, Network);
+            Cache = new Cache(Settings, Network);
 
-            var imageHash = environment.ClientImageHash;
+            var imageHash = settings.ClientImageHash;
             var imagePath = default(FileInfo);
             var exists = !string.IsNullOrEmpty(imageHash) && Cache.TryGetCache(imageHash, out imagePath);
-            var profile = new ContractProfile(environment.ClientId, ContractProfileType.Client)
+            var profile = new NotifyContractProfile(settings.ClientId)
             {
-                Name = environment.ClientName,
-                Text = environment.ClientText,
-                UdpPort = environment.UdpEndPoint.Port,
-                TcpPort = environment.TcpEndPoint.Port,
+                Name = settings.ClientName,
+                Text = settings.ClientText,
+                UdpPort = settings.UdpEndPoint.Port,
+                TcpPort = settings.TcpEndPoint.Port,
                 ImageHash = exists ? imageHash : string.Empty,
             };
             profile.SetImagePath(exists ? imagePath.FullName : string.Empty);
@@ -119,7 +115,7 @@ namespace Mikodev.Links.Internal
 
         public void CleanProfiles() => Contracts.CleanProfileCollection();
 
-        public Task WriteSettingsAsync(string file) => settings.SaveAsync(file);
+        public Task WriteSettingsAsync(string file) => Settings.SaveAsync(file);
 
         public void Dispose()
         {
@@ -140,8 +136,8 @@ namespace Mikodev.Links.Internal
             var message = new NotifyTextMessage();
             message.SetObject(text);
             var packetData = new { messageId = message.MessageId, text, };
-            await Dispatcher.InvokeAsync(() => AppendMessage((ContractProfile)profile, message));
-            await Network.SendAsync((ContractProfile)profile, message, "link.message.text", packetData);
+            await Dispatcher.InvokeAsync(() => AppendMessage((NotifyContractProfile)profile, message));
+            await Network.SendAsync((NotifyContractProfile)profile, message, "link.message.text", packetData);
         }
 
         /// <summary>
@@ -153,8 +149,8 @@ namespace Mikodev.Links.Internal
             var message = new NotifyImageMessage() { ImageHash = result.Hash };
             message.SetObject(result.FileInfo.FullName);
             var packetData = new { messageId = message.MessageId, imageHash = result.Hash, };
-            await Dispatcher.InvokeAsync(() => AppendMessage((ContractProfile)profile, message));
-            await Network.SendAsync((ContractProfile)profile, message, "link.message.image-hash", packetData);
+            await Dispatcher.InvokeAsync(() => AppendMessage((NotifyContractProfile)profile, message));
+            await Network.SendAsync((NotifyContractProfile)profile, message, "link.message.image-hash", packetData);
         }
 
         public async Task SetProfileImageAsync(string file)
@@ -165,7 +161,7 @@ namespace Mikodev.Links.Internal
             profile.SetImagePath(result.FileInfo.FullName);
         }
 
-        private async Task AppendMessage(ContractProfile profile, NotifyMessage message)
+        private async Task AppendMessage(NotifyContractProfile profile, NotifyPropertyMessage message)
         {
             var messages = profile.MessageCollection;
             if (messages.Any(r => r.MessageId == message.MessageId))
@@ -190,7 +186,7 @@ namespace Mikodev.Links.Internal
             profile.UnreadCount++;
         }
 
-        private async Task<bool> ResponseAsync(IRequest parameter, NotifyMessage message)
+        private async Task<bool> ResponseAsync(IRequest parameter, NotifyPropertyMessage message)
         {
             var success = parameter.SenderProfile != null;
             if (success)
@@ -200,7 +196,7 @@ namespace Mikodev.Links.Internal
             return success;
         }
 
-        internal async Task HandleTextAsync(IRequest parameter)
+        public async Task HandleTextAsync(IRequest parameter)
         {
             var data = parameter.Packet.Data;
             var message = new NotifyTextMessage(data["messageId"].As<string>());
@@ -218,7 +214,7 @@ namespace Mikodev.Links.Internal
                     : reference == MessageReference.Local.ToString() ? MessageReference.Local : MessageReference.None;
             }
 
-            NotifyMessage Convert(MessageEntry item)
+            NotifyPropertyMessage Convert(MessageEntry item)
             {
                 if (item.Path == NotifyTextMessage.MessagePath)
                 {
@@ -240,20 +236,20 @@ namespace Mikodev.Links.Internal
                 return default;
             }
 
-            void Migrate(ObservableCollection<NotifyMessage> collection, IEnumerable<MessageEntry> messages)
+            void Migrate(ObservableCollection<NotifyPropertyMessage> collection, IEnumerable<MessageEntry> messages)
             {
                 var list = messages.Where(m => !collection.Any(x => x.MessageId == m.MessageId)).Select(Convert).Where(x => x != null).ToList();
                 list.Reverse();
                 list.ForEach(x => collection.Insert(0, x));
             }
 
-            var messages = ((ContractProfile)profile).MessageCollection;
+            var messages = ((NotifyContractProfile)profile).MessageCollection;
             var list = await Storage.QueryMessagesAsync(profile.ProfileId, 30);
             Migrate(messages, list);
             return messages;
         }
 
-        internal async Task HandleImageAsync(IRequest parameter)
+        public async Task HandleImageAsync(IRequest parameter)
         {
             var data = parameter.Packet.Data;
             var imageHash = data["imageHash"].As<string>();

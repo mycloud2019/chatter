@@ -1,4 +1,5 @@
 ﻿using Mikodev.Links.Abstractions;
+using Mikodev.Links.Internal.Implementations;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,33 +14,33 @@ namespace Mikodev.Links.Internal
     {
         private readonly Client client;
 
-        private readonly Configurations configurations;
+        private readonly Settings settings;
 
         private readonly object locker = new object();
 
-        private readonly Dictionary<string, ContractProfile> profiles = new Dictionary<string, ContractProfile>();
+        private readonly Dictionary<string, NotifyContractProfile> profiles = new Dictionary<string, NotifyContractProfile>();
 
-        public ObservableCollection<ContractProfile> ProfileCollection { get; } = new ObservableCollection<ContractProfile>();
+        public ObservableCollection<NotifyContractProfile> ProfileCollection { get; } = new ObservableCollection<NotifyContractProfile>();
 
-        internal Contracts(Client client)
+        public Contracts(Client client)
         {
             this.client = client;
-            configurations = client.Configurations;
+            settings = client.Settings;
             var network = client.Network;
-            Debug.Assert(configurations != null);
+            Debug.Assert(settings != null);
             Debug.Assert(network != null);
             network.RegisterHandler("link.broadcast", HandleBroadcastAsync);
         }
 
-        internal ContractProfile FindProfile(string id) => Lock(locker, () => profiles.TryGetValue(id, out var profile) ? profile : null);
+        public NotifyContractProfile FindProfile(string id) => Lock(locker, () => profiles.TryGetValue(id, out var profile) ? profile : null);
 
-        internal void CleanProfileCollection()
+        public void CleanProfileCollection()
         {
             client.Dispatcher.VerifyAccess();
 
             var collection = ProfileCollection;
 
-            static bool NotOnline(ContractProfile profile) => profile.OnlineStatus != ProfileOnlineStatus.Online;
+            static bool NotOnline(NotifyContractProfile profile) => profile.OnlineStatus != ProfileOnlineStatus.Online;
 
             lock (locker)
             {
@@ -50,7 +51,7 @@ namespace Mikodev.Links.Internal
             }
         }
 
-        internal Task LoopAsync()
+        public Task LoopAsync()
         {
             var tasks = new Task[]
             {
@@ -62,10 +63,10 @@ namespace Mikodev.Links.Internal
 
         private async Task UpdateLoopAsync()
         {
-            int UpdateStatus(ContractProfile profile)
+            int UpdateStatus(NotifyContractProfile profile)
             {
                 var span = DateTime.Now - profile.LastOnlineDateTime;
-                if (span < TimeSpan.Zero || span > configurations.ProfileOnlineTimeout)
+                if (span < TimeSpan.Zero || span > settings.ProfileOnlineTimeout)
                     profile.SetOnlineStatus(ProfileOnlineStatus.Offline);
                 var imageHash = profile.RemoteImageHash;
                 if (!string.IsNullOrEmpty(imageHash) && imageHash != profile.ImageHash)
@@ -78,11 +79,11 @@ namespace Mikodev.Links.Internal
             {
                 token.ThrowIfCancellationRequested();
                 await client.Dispatcher.InvokeAsync(() => Lock(locker, () => profiles.Values.Sum(UpdateStatus)));
-                await Task.Delay(configurations.BackgroundTaskDelay);
+                await Task.Delay(settings.BackgroundTaskDelay);
             }
         }
 
-        private async Task UpdateImageAsync(ContractProfile profile)
+        private async Task UpdateImageAsync(NotifyContractProfile profile)
         {
             var cache = client.Cache;
             var imageHash = profile.RemoteImageHash;
@@ -94,7 +95,7 @@ namespace Mikodev.Links.Internal
 
         private async Task BroadcastLoopAsync()
         {
-            var profile = (ContractProfile)client.Profile;
+            var profile = (NotifyContractProfile)client.Profile;
             var network = client.Network;
             var token = client.CancellationToken;
 
@@ -110,16 +111,16 @@ namespace Mikodev.Links.Internal
                     imageHash = profile.ImageHash,
                 };
                 await network.BroadcastAsync("link.broadcast", data);
-                await Task.Delay(configurations.BroadcastTaskDelay, token);
+                await Task.Delay(settings.BroadcastTaskDelay, token);
             }
         }
 
-        internal async Task HandleBroadcastAsync(IRequest parameter)
+        public async Task HandleBroadcastAsync(IRequest parameter)
         {
             var packet = parameter.Packet;
             var data = packet.Data;
             var senderId = packet.SenderId;
-            // if senderId == environment.ClientId then ...
+            // if senderId == settings.ClientId then ...
             var address = parameter.IPAddress;
             var tcpPort = data["tcpPort"].As<int>();
             var udpPort = data["udpPort"].As<int>();
@@ -127,8 +128,8 @@ namespace Mikodev.Links.Internal
             var text = data["text"].As<string>();
             var imageHash = data["imageHash"].As<string>();
 
-            var instance = default(ContractProfile);
-            var profile = Lock(locker, () => profiles.GetOrAdd(senderId, key => instance = new ContractProfile(key, ContractProfileType.Client)));
+            var instance = default(NotifyContractProfile);
+            var profile = Lock(locker, () => profiles.GetOrAdd(senderId, key => instance = new NotifyContractProfile(key)));
             await client.Dispatcher.InvokeAsync(() =>
             {
                 profile.Name = name;

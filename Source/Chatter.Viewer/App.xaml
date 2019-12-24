@@ -8,11 +8,11 @@
     <StyleInclude Source="avares://Chatter.Viewer/Styles/ListBoxItem.xaml" />
 
     <Style Selector="TextBlock">
-      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontSize" Value="13" />
       <Setter Property="Foreground" Value="#FF2C2C2C" />
     </Style>
     <Style Selector="TextBox">
-      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontSize" Value="13" />
       <Setter Property="Foreground" Value="#FF2C2C2C" />
     </Style>
     <Style Selector="TextBlock.Small">

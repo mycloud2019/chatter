@@ -45,7 +45,6 @@ namespace Chatter.Viewer
 
         private async void Window_Opened(object sender, EventArgs e)
         {
-            Application.Current.MainWindow = this;
             _ = this.AddHandler(Button.ClickEvent, Button_Click);
 
             async Task<IClient> CreateClient()
@@ -59,7 +58,7 @@ namespace Chatter.Viewer
                 if (exists == false && client != null)
                     client.Profile.Name = $"{Environment.UserName}@{Environment.MachineName}";
                 if (result.IsError())
-                    Application.Current.Exit();
+                    this.Close();
                 return client;
             }
 

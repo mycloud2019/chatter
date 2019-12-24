@@ -6,16 +6,17 @@ using System.Json;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Mikodev.Links.Internal
 {
-    internal partial class Configurations
+    internal partial class Settings
     {
-        internal static readonly int SettingsMaximumCharacters = 32 * 1024;
+        private static readonly int SettingsMaximumCharacters = 32 * 1024;
 
-        internal static readonly TimeSpan SettingsIOTimeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan SettingsIOTimeout = TimeSpan.FromSeconds(10);
 
-        internal static Uri NormalizeBroadcastUri(string text, int alternativePort)
+        private static Uri NormalizeBroadcastUri(string text, int alternativePort)
         {
             const string prefix = "udp://";
             if (string.IsNullOrEmpty(text))
@@ -91,6 +92,37 @@ namespace Mikodev.Links.Internal
             var writer = new StringWriter(buffer);
             data.Save(writer);
             return buffer.ToString();
+        }
+
+        public static async Task<Settings> LoadAsync(TextReader reader)
+        {
+            var buffer = new char[SettingsMaximumCharacters];
+            var length = await reader.ReadBlockAsync(buffer, 0, buffer.Length).TimeoutAfter(SettingsIOTimeout);
+            var text = new string(buffer, 0, length);
+            var settings = new Settings();
+            settings.Load(text);
+            return settings;
+        }
+
+        public static async Task<Settings> LoadAsync(string path)
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            return await LoadAsync(reader);
+        }
+
+        public async Task SaveAsync(TextWriter writer)
+        {
+            var item = this;
+            var text = item.Save();
+            await writer.WriteAsync(text).TimeoutAfter(SettingsIOTimeout);
+        }
+
+        public async Task SaveAsync(string path)
+        {
+            using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+            using var writer = new StreamWriter(stream, Encoding.UTF8);
+            await SaveAsync(writer);
         }
     }
 }

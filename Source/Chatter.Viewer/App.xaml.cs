@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -52,6 +53,13 @@ namespace Chatter.Viewer
                 var property = (AvaloniaProperty)field.GetValue(null);
                 style.Setters.Add(new Setter { Property = property, Value = font });
             }
+        }
+
+        public override void OnFrameworkInitializationCompleted()
+        {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.MainWindow = new Cover();
+            base.OnFrameworkInitializationCompleted();
         }
     }
 }

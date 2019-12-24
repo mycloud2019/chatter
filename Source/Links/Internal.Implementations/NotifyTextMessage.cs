@@ -1,9 +1,9 @@
 ﻿using Mikodev.Links.Abstractions;
 using System;
 
-namespace Mikodev.Links.Internal.Messages
+namespace Mikodev.Links.Internal.Implementations
 {
-    internal sealed class NotifyTextMessage : NotifyMessage
+    internal sealed class NotifyTextMessage : NotifyPropertyMessage
     {
         public const string MessagePath = "message.text";
 

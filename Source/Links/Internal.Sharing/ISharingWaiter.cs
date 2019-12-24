@@ -2,7 +2,7 @@
 
 namespace Mikodev.Links.Internal.Sharing
 {
-    internal interface IShareReceiver
+    internal interface ISharingWaiter
     {
         Task<bool> WaitForAcceptAsync();
     }

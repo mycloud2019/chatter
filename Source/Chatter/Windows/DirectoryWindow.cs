@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Chatter.Windows
 {
-    public sealed class DirectoryWindow : ShareWindow
+    public sealed class DirectoryWindow : SharingWindow
     {
         private readonly SharingViewer viewer;
 

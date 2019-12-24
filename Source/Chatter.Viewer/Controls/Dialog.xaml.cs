@@ -29,7 +29,7 @@ namespace Chatter.Viewer.Controls
             this.DetachedFromVisualTree += this.UserControl_DetachedFromVisualTree;
             this.listbox = this.FindControl<ListBox>("listbox");
             this.textbox = this.FindControl<TextBox>("textbox");
-            this.FindControl<Button>("post").Click += (s, e) => PostText();
+            this.FindControl<Button>("post").Click += (s, e) => PutText();
         }
 
         private async void UserControl_AttachedToVisualTree(object sender, VisualTreeAttachmentEventArgs e)
@@ -58,13 +58,13 @@ namespace Chatter.Viewer.Controls
             if (e.Key != Key.Enter)
                 return;
 
-            switch (e.Modifiers)
+            switch (e.KeyModifiers)
             {
-                case InputModifiers.None:
-                    PostText();
+                case KeyModifiers.None:
+                    PutText();
                     break;
 
-                case InputModifiers.Shift:
+                case KeyModifiers.Shift:
                     textbox.Text = textbox.Text.Insert(textbox.CaretIndex, Environment.NewLine);
                     textbox.CaretIndex += Environment.NewLine.Length;
                     break;
@@ -80,7 +80,7 @@ namespace Chatter.Viewer.Controls
             listbox.ScrollIntoView(item);
         }
 
-        private void PostText()
+        private void PutText()
         {
             var text = textbox.Text;
             if (string.IsNullOrEmpty(text))

@@ -2,7 +2,7 @@
 
 namespace Mikodev.Links.Internal
 {
-    internal class Packet
+    internal sealed class Packet
     {
         /// <summary>
         /// packet id (maybe null)

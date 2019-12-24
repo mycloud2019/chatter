@@ -3,9 +3,9 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Mikodev.Links.Internal.Sharing
+namespace Mikodev.Links.Internal.Implementations
 {
-    internal abstract class NotifySharingViewer : SharingViewer, INotifyPropertyChanging, INotifyPropertyChanged
+    internal abstract class NotifyPropertySharingViewer : SharingViewer, INotifyPropertyChanging, INotifyPropertyChanged
     {
         private string name;
 
@@ -45,7 +45,7 @@ namespace Mikodev.Links.Internal.Sharing
 
         public override TimeSpan Remaining => remaining;
 
-        protected NotifySharingViewer(Profile profile) => this.Profile = profile ?? throw new ArgumentNullException(nameof(profile));
+        protected NotifyPropertySharingViewer(Profile profile) => this.Profile = profile ?? throw new ArgumentNullException(nameof(profile));
 
         protected void NotifyProperty<T>(ref T location, T value, [CallerMemberName] string property = null) => NotifyPropertyHelper.NotifyProperty(this, PropertyChanging, PropertyChanged, ref location, value, property);
 

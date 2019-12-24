@@ -1,17 +1,18 @@
 ﻿using Mikodev.Links.Abstractions;
+using Mikodev.Links.Internal.Implementations;
 using System;
 using System.IO;
 
 namespace Mikodev.Links.Internal.Sharing
 {
-    internal abstract class FileObject : ShareObject
+    internal abstract class FileObject : SharingObject
     {
-        protected FileObject(IClient client, Stream stream, NotifySharingViewer viewer) : base(client, stream, viewer) { }
+        protected FileObject(IClient client, Stream stream, NotifyPropertySharingViewer viewer) : base(client, stream, viewer) { }
 
         protected override void Report()
         {
             base.Report();
-            var viewer = (NotifySharingViewer)Viewer;
+            var viewer = (NotifyPropertySharingViewer)Viewer;
             viewer.SetProgress(viewer.Length == 0
                 ? viewer.Status == SharingStatus.Success ? 1.0 : 0
                 : 1.0 * viewer.Position / viewer.Length);

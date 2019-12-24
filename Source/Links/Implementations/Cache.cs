@@ -29,12 +29,12 @@ namespace Mikodev.Links.Implementations
 
         private readonly string extension = ".png";
 
-        internal Cache(Configurations configurations, INetwork network)
+        public Cache(Settings settings, INetwork network)
         {
-            Debug.Assert(configurations != null);
+            Debug.Assert(settings != null);
             Debug.Assert(network != null);
             this.network = network;
-            cachepath = Path.GetFullPath(configurations.CacheDirectory);
+            cachepath = Path.GetFullPath(settings.CacheDirectory);
             network.RegisterHandler("link.get-cache", HandleCacheAsync);
         }
 
@@ -146,7 +146,7 @@ namespace Mikodev.Links.Implementations
             (completionManager as IDisposable)?.Dispose();
         }
 
-        internal async Task HandleCacheAsync(IRequest parameter)
+        public async Task HandleCacheAsync(IRequest parameter)
         {
             var data = parameter.Packet.Data;
             var hash = data["hash"].As<string>();

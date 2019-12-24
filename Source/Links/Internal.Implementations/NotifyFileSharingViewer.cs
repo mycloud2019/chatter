@@ -1,11 +1,11 @@
 ﻿using Mikodev.Links.Abstractions;
 using System;
 
-namespace Mikodev.Links.Internal.Sharing
+namespace Mikodev.Links.Internal.Implementations
 {
-    internal class FileSharingViewer : NotifySharingViewer
+    internal sealed class NotifyFileSharingViewer : NotifyPropertySharingViewer
     {
-        public FileSharingViewer(Profile profile, string name, string fullName, long length) : base(profile)
+        public NotifyFileSharingViewer(Profile profile, string name, string fullName, long length) : base(profile)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));

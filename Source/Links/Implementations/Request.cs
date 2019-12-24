@@ -2,6 +2,7 @@
 using Mikodev.Links.Abstractions;
 using Mikodev.Links.Abstractions.Models;
 using Mikodev.Links.Internal;
+using Mikodev.Links.Internal.Implementations;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -22,7 +23,7 @@ namespace Mikodev.Links.Implementations
 
         public Packet Packet { get; }
 
-        public ContractProfile SenderProfile { get; }
+        public NotifyContractProfile SenderProfile { get; }
 
         public IPAddress IPAddress => endpoint.Address;
 

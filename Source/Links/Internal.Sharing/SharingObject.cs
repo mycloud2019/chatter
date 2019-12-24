@@ -1,5 +1,6 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
+using Mikodev.Links.Internal.Implementations;
 using Mikodev.Optional;
 using System;
 using System.Collections.Generic;
@@ -12,11 +13,13 @@ using static Mikodev.Optional.Extensions;
 
 namespace Mikodev.Links.Internal.Sharing
 {
-    internal abstract partial class ShareObject : ISharingObject, IDisposable
+    internal abstract partial class SharingObject : ISharingObject, IDisposable
     {
         private const int None = 0, Started = 1, Disposed = 2;
 
         private const int TickLimits = 30;
+
+        private const int BufferLength = 4096;
 
         private static readonly TimeSpan updateDelay = TimeSpan.FromMilliseconds(67);
 
@@ -28,23 +31,23 @@ namespace Mikodev.Links.Internal.Sharing
 
         private readonly Client client;
 
-        private readonly NotifySharingViewer viewer;
+        private readonly NotifyPropertySharingViewer viewer;
 
-        private int interStatus = None;
+        private int status = None;
 
-        private long interPosition;
+        private long offset;
 
         protected Stream Stream { get; }
 
         protected CancellationToken CancellationToken { get; }
 
-        internal IGenerator Generator => client.Generator;
+        protected IGenerator Generator => client.Generator;
 
-        internal Configurations Configurations => client.Configurations;
+        protected Settings Settings => client.Settings;
 
         public SharingViewer Viewer => viewer;
 
-        protected ShareObject(IClient client, Stream stream, NotifySharingViewer sharingViewer)
+        protected SharingObject(IClient client, Stream stream, NotifyPropertySharingViewer sharingViewer)
         {
             CancellationToken = cancellation.Token;
             this.client = (Client)client ?? throw new ArgumentNullException(nameof(client));
@@ -67,16 +70,16 @@ namespace Mikodev.Links.Internal.Sharing
             });
         }
 
-        internal Task LoopAsync()
+        public Task LoopAsync()
         {
-            if (Interlocked.CompareExchange(ref interStatus, Started, None) != None)
+            if (Interlocked.CompareExchange(ref status, Started, None) != None)
                 throw new InvalidOperationException();
             return Task.Run(MainLoopAsync);
         }
 
         private async Task MainLoopAsync()
         {
-            var invoke = this is IShareReceiver
+            var invoke = this is ISharingWaiter
                 ? Task.Run(GetAsync)
                 : Task.Run(PutAsync);
             do
@@ -91,7 +94,7 @@ namespace Mikodev.Links.Internal.Sharing
 
         private async Task PutAsync()
         {
-            var buffer = await Stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
+            var buffer = await Stream.ReadBlockWithHeaderAsync(Settings.TcpBufferLimits, CancellationToken);
             var data = new Token(Generator, buffer);
             var dictionary = (IReadOnlyDictionary<string, Token>)data;
             var result = dictionary.TryGetValue("status", out var item) ? item.As<string>() : null;
@@ -107,7 +110,7 @@ namespace Mikodev.Links.Internal.Sharing
 
         private async Task GetAsync()
         {
-            var accept = await ((IShareReceiver)this).WaitForAcceptAsync();
+            var accept = await ((ISharingWaiter)this).WaitForAcceptAsync();
             var buffer = Generator.Encode(new { status = accept ? "ok" : "refused" });
             await Stream.WriteWithHeaderAsync(buffer, CancellationToken);
 
@@ -127,12 +130,13 @@ namespace Mikodev.Links.Internal.Sharing
 
         private (string name, string fullName) FindAvailableName()
         {
-            var container = new DirectoryInfo(Configurations.ShareDirectory);
+            var container = new DirectoryInfo(Settings.SharingDirectory);
             if (container.Exists == false)
                 container.Create();
+            var flag = this is ISharingDirectoryObject;
             var name = Viewer.Name;
-            var tail = Path.GetExtension(name);
-            var head = Path.GetFileNameWithoutExtension(name);
+            var tail = flag ? string.Empty : Path.GetExtension(name);
+            var head = flag ? name : Path.GetFileNameWithoutExtension(name);
             for (var i = 0; i < 16; i++)
             {
                 var path = Path.Combine(container.FullName, name);
@@ -147,7 +151,7 @@ namespace Mikodev.Links.Internal.Sharing
 
         protected virtual void Report()
         {
-            var position = interPosition;
+            var position = offset;
             viewer.SetPosition(position);
             if (ticks.Count == 0)
                 return;
@@ -168,7 +172,7 @@ namespace Mikodev.Links.Internal.Sharing
         protected async Task PutFileAsync(string path, long length)
         {
             var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            var buffer = new byte[Configurations.TcpBufferLength];
+            var buffer = new byte[BufferLength];
 
             try
             {
@@ -179,7 +183,7 @@ namespace Mikodev.Links.Internal.Sharing
                     var result = await stream.ReadAsync(buffer, 0, (int)Math.Min(length, buffer.Length), CancellationToken);
                     await Stream.WriteAsync(buffer, 0, result, CancellationToken);
                     length -= result;
-                    interPosition += result;
+                    offset += result;
                 }
                 await stream.FlushAsync();
             }
@@ -194,7 +198,7 @@ namespace Mikodev.Links.Internal.Sharing
             if (length < 0)
                 throw new IOException("Invalid file length!");
             var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
-            var buffer = new byte[Configurations.TcpBufferLength];
+            var buffer = new byte[BufferLength];
 
             try
             {
@@ -204,7 +208,7 @@ namespace Mikodev.Links.Internal.Sharing
                     await Stream.ReadBlockAsync(buffer, 0, result, CancellationToken);
                     await stream.WriteAsync(buffer, 0, result);
                     length -= result;
-                    interPosition += result;
+                    offset += result;
                 }
                 await stream.FlushAsync();
             }
@@ -222,11 +226,11 @@ namespace Mikodev.Links.Internal.Sharing
 
         public void Dispose()
         {
-            if (Volatile.Read(ref interStatus) == Disposed)
+            if (Volatile.Read(ref status) == Disposed)
                 return;
             cancellation.Dispose();
             Stream.Dispose();
-            Volatile.Write(ref interStatus, Disposed);
+            Volatile.Write(ref status, Disposed);
         }
     }
 }

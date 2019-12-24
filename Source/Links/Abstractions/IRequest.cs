@@ -1,5 +1,6 @@
 ﻿using Mikodev.Links.Abstractions.Models;
 using Mikodev.Links.Internal;
+using Mikodev.Links.Internal.Implementations;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -19,7 +20,7 @@ namespace Mikodev.Links.Abstractions
 
         IPAddress IPAddress { get; }
 
-        ContractProfile SenderProfile { get; }
+        NotifyContractProfile SenderProfile { get; }
 
         Task ResponseAsync(object data);
     }

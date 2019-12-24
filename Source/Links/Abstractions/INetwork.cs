@@ -1,5 +1,4 @@
-﻿using Mikodev.Links.Internal;
-using Mikodev.Links.Internal.Messages;
+﻿using Mikodev.Links.Internal.Implementations;
 using System;
 using System.IO;
 using System.Net;
@@ -12,7 +11,7 @@ namespace Mikodev.Links.Abstractions
     {
         void RegisterHandler(string path, Func<IRequest, Task> func);
 
-        Task SendAsync(ContractProfile profile, NotifyMessage message, string path, object data);
+        Task SendAsync(NotifyContractProfile profile, NotifyPropertyMessage message, string path, object data);
 
         Task BroadcastAsync(string path, object data);
 

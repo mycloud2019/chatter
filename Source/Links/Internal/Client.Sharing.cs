@@ -1,6 +1,7 @@
 ﻿using Mikodev.Binary;
 using Mikodev.Links.Abstractions;
 using Mikodev.Links.Abstractions.Models;
+using Mikodev.Links.Internal.Implementations;
 using Mikodev.Links.Internal.Sharing;
 using Mikodev.Optional;
 using System;
@@ -17,22 +18,22 @@ namespace Mikodev.Links.Internal
 
         private void Initial(INetwork network)
         {
-            network.RegisterHandler("link.share.file", HandleFileAsync);
-            network.RegisterHandler("link.share.directory", HandleDirectoryAsync);
+            network.RegisterHandler("link.sharing.file", HandleFileAsync);
+            network.RegisterHandler("link.sharing.directory", HandleDirectoryAsync);
         }
 
         public async Task PutFileAsync(Profile profile, string file, SharingHandler<ISharingFileSender> handler)
         {
-            if (profile == null || handler == null || !(profile is ContractProfile receiver))
+            if (profile == null || handler == null || !(profile is NotifyContractProfile receiver))
                 throw new ArgumentNullException();
             var fileInfo = new FileInfo(file);
             if (!fileInfo.Exists)
                 throw new FileNotFoundException("File not found!", file);
             var length = fileInfo.Length;
             var packet = new { name = fileInfo.Name, length };
-            _ = await Network.ConnectAsync("link.share.file", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
+            _ = await Network.ConnectAsync("link.sharing.file", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
             {
-                var result = await stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
+                var result = await stream.ReadBlockWithHeaderAsync(Settings.TcpBufferLimits, CancellationToken);
                 var data = new Token(Generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new NetworkException(NetworkError.InvalidData);
@@ -47,15 +48,15 @@ namespace Mikodev.Links.Internal
 
         public async Task PutDirectoryAsync(Profile profile, string directory, SharingHandler<ISharingDirectorySender> handler)
         {
-            if (profile == null || handler == null || !(profile is ContractProfile receiver))
+            if (profile == null || handler == null || !(profile is NotifyContractProfile receiver))
                 throw new ArgumentNullException();
             var directoryInfo = new DirectoryInfo(directory);
             if (!directoryInfo.Exists)
                 throw new DirectoryNotFoundException("Directory not found!");
             var packet = new { name = directoryInfo.Name };
-            _ = await Network.ConnectAsync("link.share.directory", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
+            _ = await Network.ConnectAsync("link.sharing.directory", packet, receiver.GetTcpEndPoint(), CancellationToken, async stream =>
             {
-                var result = await stream.ReadBlockWithHeaderAsync(Configurations.TcpBufferLimits, CancellationToken);
+                var result = await stream.ReadBlockWithHeaderAsync(Settings.TcpBufferLimits, CancellationToken);
                 var data = new Token(Generator, result);
                 if (data["status"].As<string>() != "wait")
                     throw new NetworkException(NetworkError.InvalidData);

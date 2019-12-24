@@ -14,9 +14,9 @@ using System.Windows.Media;
 
 namespace Chatter.Windows
 {
-    public abstract partial class ShareWindow : Window
+    public abstract partial class SharingWindow : Window
     {
-        private readonly ISharingObject shareObject;
+        private readonly ISharingObject sharingObject;
 
         private readonly SharingViewer viewer;
 
@@ -24,7 +24,7 @@ namespace Chatter.Windows
 
         private double maximumSpeed = 0.0;
 
-        public ShareWindow(ISharingObject shareObject)
+        public SharingWindow(ISharingObject sharingObject)
         {
             InitializeComponent();
 
@@ -32,9 +32,9 @@ namespace Chatter.Windows
             Debug.Assert(owner is Entrance);
             Owner = owner;
 
-            var receiver = shareObject is ISharingReceiver;
-            this.shareObject = shareObject ?? throw new ArgumentNullException(nameof(shareObject));
-            this.viewer = shareObject.Viewer;
+            var receiver = sharingObject is ISharingReceiver;
+            this.sharingObject = sharingObject ?? throw new ArgumentNullException(nameof(sharingObject));
+            this.viewer = sharingObject.Viewer;
             if (receiver == false)
                 acceptButton.Visibility = Visibility.Collapsed;
             sourceTextBlock.Text = receiver ? "Sender" : "Receiver";
@@ -44,7 +44,7 @@ namespace Chatter.Windows
             var handler = new PropertyChangedEventHandler((s, e) => OnUpdate(e.PropertyName));
             if (receiver)
                 Loaded += (s, _) => NativeMethods.FlashWindow(new WindowInteropHelper((Window)s).Handle, true);
-            Closed += (s, _) => (shareObject as IDisposable)?.Dispose();
+            Closed += (s, _) => (sharingObject as IDisposable)?.Dispose();
             Loaded += (s, _) => OnUpdate(string.Empty);
             Loaded += (s, _) => ((INotifyPropertyChanged)viewer).PropertyChanged += handler;
             Unloaded += (s, _) => ((INotifyPropertyChanged)viewer).PropertyChanged -= handler;
@@ -54,7 +54,7 @@ namespace Chatter.Windows
         private void OnButtonClick(object _, RoutedEventArgs e)
         {
             var button = e.OriginalSource as Button; ;
-            var receiver = shareObject as ISharingReceiver;
+            var receiver = sharingObject as ISharingReceiver;
             if (button == acceptButton)
             {
                 Debug.Assert(receiver != null);
@@ -66,7 +66,7 @@ namespace Chatter.Windows
                 if (receiver != null && viewer.Status == SharingStatus.Pending)
                     receiver.Accept(false);
                 else
-                    (shareObject as IDisposable)?.Dispose();
+                    (sharingObject as IDisposable)?.Dispose();
             }
             else if (button == backupButton)
             {
