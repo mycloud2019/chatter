@@ -2,6 +2,7 @@
 using Chatter.Pages;
 using Chatter.Windows;
 using Mikodev.Links.Abstractions;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -62,7 +63,7 @@ namespace Chatter
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            ObservableCollection<Profile> Filter(string input)
+            IEnumerable<Profile> Filter(string input)
             {
                 Debug.Assert(input.ToUpperInvariant() == input);
                 var result = new ObservableCollection<Profile>();
@@ -75,11 +76,11 @@ namespace Chatter
             Debug.Assert(sender == searchBox);
             var text = searchBox.Text;
             var flag = string.IsNullOrEmpty(text);
-            var list = flag ? (ObservableCollection<Profile>)client.Profiles : Filter(text.ToUpperInvariant());
+            var list = flag ? client.Profiles : Filter(text.ToUpperInvariant());
 
             clientTextBlock.Text = flag ? "All" : $"Search '{text}'";
             clientListBox.ItemsSource = list;
-            clientListBox.SelectedIndex = list.IndexOf(App.CurrentProfile);
+            clientListBox.SelectedItem = App.CurrentProfile;
         }
 
         private void UserControl_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

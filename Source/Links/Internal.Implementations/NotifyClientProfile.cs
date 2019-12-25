@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Mikodev.Links.Internal.Implementations
 {
@@ -16,7 +17,9 @@ namespace Mikodev.Links.Internal.Implementations
 
         public string ImageHash { get => this.imageHash; set => this.NotifyProperty(ref this.imageHash, value); }
 
-        public string RemoteImageHash { get; set; }
+        public string ImageHashRemote { get; set; }
+
+        public Task ImageRequest { get; set; }
 
         public ObservableCollection<NotifyPropertyMessage> MessageCollection { get; } = new ObservableCollection<NotifyPropertyMessage>();
 

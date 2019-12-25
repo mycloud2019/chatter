@@ -43,22 +43,22 @@ namespace Mikodev.Links.Internal
         {
             async Task UpdateImageAsync(NotifyClientProfile profile)
             {
-                var cache = this.cache;
-                var imageHash = profile.RemoteImageHash;
-
-                var fileInfo = await cache.GetCacheAsync(imageHash, profile.GetTcpEndPoint(), this.cancellationToken);
+                var imageHash = profile.ImageHashRemote;
+                var fileInfo = await this.cache.GetCacheAsync(imageHash, profile.GetTcpEndPoint(), this.cancellationToken);
                 profile.ImageHash = imageHash;
                 await this.dispatcher.InvokeAsync(() => profile.SetImagePath(fileInfo.FullName));
             }
 
             int UpdateStatus(NotifyClientProfile profile)
             {
+                if (profile.ImageRequest?.IsCompleted == true)
+                    profile.ImageRequest = null;
                 var span = DateTime.Now - profile.LastOnlineDateTime;
                 if (span < TimeSpan.Zero || span > this.settings.ProfileOnlineTimeout)
                     profile.SetOnlineStatus(ProfileOnlineStatus.Offline);
-                var imageHash = profile.RemoteImageHash;
-                if (!string.IsNullOrEmpty(imageHash) && imageHash != profile.ImageHash)
-                    _ = Task.Run(() => UpdateImageAsync(profile));
+                var imageHash = profile.ImageHashRemote;
+                if (profile.ImageRequest is null && !string.IsNullOrEmpty(imageHash) && imageHash != profile.ImageHash)
+                    profile.ImageRequest = Task.Run(() => UpdateImageAsync(profile));
                 return 1;
             }
 
@@ -117,7 +117,7 @@ namespace Mikodev.Links.Internal
                 profile.UdpPort = udpPort;
                 profile.LastOnlineDateTime = DateTime.Now;
                 profile.SetOnlineStatus(ProfileOnlineStatus.Online);
-                profile.RemoteImageHash = imageHash;
+                profile.ImageHashRemote = imageHash;
 
                 if (instance != null)
                     this.profileCollection.Add(profile);
