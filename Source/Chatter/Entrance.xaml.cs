@@ -22,27 +22,28 @@ namespace Chatter
 
         public Entrance()
         {
-            InitializeComponent();
-            client = App.CurrentClient;
-            DataContext = client;
-            Loaded += Window_Loaded;
+            this.InitializeComponent();
+            this.client = App.CurrentClient;
+            this.DataContext = this.client;
+            this.Loaded += this.Window_Loaded;
+            this.profileImage.MouseLeftButtonDown += UserControl_MouseLeftButtonDown;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Application.Current.MainWindow = this;
-            Debug.Assert(client != null);
-            client.NewFileReceiver += x => new FileWindow(x).Show();
-            client.NewDirectoryReceiver += x => new DirectoryWindow(x).Show();
+            Debug.Assert(this.client != null);
+            this.client.NewFileReceiver += x => new FileWindow(x).Show();
+            this.client.NewDirectoryReceiver += x => new DirectoryWindow(x).Show();
 
             void NewMessageHandler(object s, MessageEventArgs message)
             {
                 var helper = new WindowInteropHelper(this);
-                if (IsActive == false)
+                if (this.IsActive == false)
                     _ = NativeMethods.FlashWindow(helper.Handle, true);
                 message.IsHandled = App.CurrentProfile == message.Profile;
             }
-            client.NewMessage += NewMessageHandler;
+            this.client.NewMessage += NewMessageHandler;
         }
 
         private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -50,8 +51,10 @@ namespace Chatter
             var current = e.AddedItems.Cast<Profile>().FirstOrDefault();
             if (current != null)
                 current.UnreadCount = 0;
+            if (current is null && this.client.Profiles.Contains(App.CurrentProfile))
+                return;
             App.CurrentProfile = current;
-            dialogFrame.Content = current == null ? null : new Dialog();
+            this.dialogFrame.Content = current == null ? null : new Dialog();
         }
 
         private void Frame_Navigated(object sender, NavigationEventArgs e)
@@ -67,20 +70,20 @@ namespace Chatter
             {
                 Debug.Assert(input.ToUpperInvariant() == input);
                 var result = new ObservableCollection<Profile>();
-                foreach (var item in client.Profiles)
+                foreach (var item in this.client.Profiles)
                     if (item.Name.ToUpperInvariant().Contains(input) || item.Text.ToUpperInvariant().Contains(input))
                         result.Add(item);
                 return result;
             }
 
-            Debug.Assert(sender == searchBox);
-            var text = searchBox.Text;
+            Debug.Assert(sender == this.searchBox);
+            var text = this.searchBox.Text;
             var flag = string.IsNullOrEmpty(text);
-            var list = flag ? client.Profiles : Filter(text.ToUpperInvariant());
+            var list = flag ? this.client.Profiles : Filter(text.ToUpperInvariant());
 
-            clientTextBlock.Text = flag ? "All" : $"Search '{text}'";
-            clientListBox.ItemsSource = list;
-            clientListBox.SelectedItem = App.CurrentProfile;
+            this.clientTextBlock.Text = flag ? "All" : $"Search '{text}'";
+            this.clientListBox.ItemsSource = list;
+            this.clientListBox.SelectedItem = App.CurrentProfile;
         }
 
         private void UserControl_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -99,7 +102,7 @@ namespace Chatter
             {
                 void OpenDirectory()
                 {
-                    var directory = new DirectoryInfo(client.ReceivingDirectory);
+                    var directory = new DirectoryInfo(this.client.ReceivingDirectory);
                     if (!directory.Exists)
                         return;
                     using (Process.Start("explorer", "/e," + directory.FullName)) { }
@@ -108,9 +111,7 @@ namespace Chatter
             }
             else if (tag == "clean")
             {
-                client.CleanProfiles();
-                if (!client.Profiles.Contains(App.CurrentProfile))
-                    clientListBox.SelectedIndex = -1;
+                this.client.CleanProfiles();
             }
         }
     }

@@ -17,10 +17,10 @@ namespace Chatter.Implementations
             this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         }
 
-        public Task InvokeAsync(Action action) => Task.Factory.StartNew(action, default, TaskCreationOptions.None, scheduler);
+        public Task InvokeAsync(Action action) => Task.Factory.StartNew(action, default, TaskCreationOptions.None, this.scheduler);
 
-        public Task InvokeAsync(Func<Task> func) => Task.Factory.StartNew(func, default, TaskCreationOptions.None, scheduler);
+        public Task InvokeAsync(Func<Task> func) => Task.Factory.StartNew(func, default, TaskCreationOptions.None, this.scheduler);
 
-        public void VerifyAccess() => dispatcher.VerifyAccess();
+        public void VerifyAccess() => this.dispatcher.VerifyAccess();
     }
 }

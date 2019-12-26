@@ -6,7 +6,7 @@ namespace Chatter.Controls
     {
         public ProfileImage()
         {
-            InitializeComponent();
+            this.InitializeComponent();
         }
     }
 }

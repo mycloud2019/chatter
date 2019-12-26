@@ -19,14 +19,14 @@ namespace Chatter.Windows
         protected override void OnUpdate(string propertyName)
         {
             base.OnUpdate(propertyName);
-            UpdateNotice($@"{Extensions.ToUnit(viewer.Position)} / {Extensions.ToUnit(viewer.Length)}, {100.0 * viewer.Progress:0.00}%, {viewer.Remaining:hh\:mm\:ss}, {viewer.Status}");
-            if (propertyName != nameof(SharingViewer.Progress) && (viewer.Status & SharingStatus.Completed) == 0)
+            this.UpdateNotice($@"{Extensions.ToUnit(this.viewer.Position)} / {Extensions.ToUnit(this.viewer.Length)}, {100.0 * this.viewer.Progress:0.00}%, {this.viewer.Remaining:hh\:mm\:ss}, {this.viewer.Status}");
+            if (propertyName != nameof(SharingViewer.Progress) && (this.viewer.Status & SharingStatus.Completed) == 0)
                 return;
-            var count = values.Count;
-            if (count > 1 && Math.Abs(values[count - 1].progress - values[count - 2].progress) < 0.002)
-                values.RemoveAt(count - 1);
-            values.Add((viewer.Progress, viewer.Speed));
-            UpdateGraphics(values);
+            var count = this.values.Count;
+            if (count > 1 && Math.Abs(this.values[count - 1].progress - this.values[count - 2].progress) < 0.002)
+                this.values.RemoveAt(count - 1);
+            this.values.Add((this.viewer.Progress, this.viewer.Speed));
+            this.UpdateGraphics(this.values);
         }
     }
 }

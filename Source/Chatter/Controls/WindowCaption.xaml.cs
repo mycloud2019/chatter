@@ -16,8 +16,8 @@ namespace Chatter.Controls
 
         public WindowCaption()
         {
-            InitializeComponent();
-            Loaded += UserControl_Loaded;
+            this.InitializeComponent();
+            Loaded += this.UserControl_Loaded;
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -28,8 +28,8 @@ namespace Chatter.Controls
                 _ = NativeMethods.EnableAcrylicBlur(window);
                 _ = NativeMethods.DisableSystemMenu(window);
 
-                window.SizeChanged += Window_Changed;
-                window.StateChanged += Window_Changed;
+                window.SizeChanged += this.Window_Changed;
+                window.StateChanged += this.Window_Changed;
             }
         }
 
@@ -68,7 +68,7 @@ namespace Chatter.Controls
             if (resizeMode != ResizeMode.CanResize && resizeMode != ResizeMode.CanResizeWithGrip)
                 return;
             var state = window.WindowState;
-            if (state == WindowState.Maximized && IsTabletMode() == false)
+            if (state == WindowState.Maximized && this.IsTabletMode() == false)
                 window.WindowState = WindowState.Normal;
             else if (state == WindowState.Normal)
                 window.WindowState = WindowState.Maximized;
@@ -78,7 +78,7 @@ namespace Chatter.Controls
         {
             var window = this.FindAncestor<Window>();
             if (e.ClickCount == 2)
-                Toggle_WindowState(window);
+                this.Toggle_WindowState(window);
             else
                 window.DragMove();
         }
@@ -95,7 +95,7 @@ namespace Chatter.Controls
                     break;
 
                 case "toggle":
-                    Toggle_WindowState(window);
+                    this.Toggle_WindowState(window);
                     break;
 
                 case "exit":

@@ -26,29 +26,29 @@ namespace Chatter.Windows
         {
             base.OnUpdate(propertyName);
 
-            UpdateNotice($"{Extensions.ToUnit(viewer.Position)}, {viewer.Status}");
-            if (propertyName != nameof(SharingViewer.Speed) && (viewer.Status & SharingStatus.Completed) == 0)
+            this.UpdateNotice($"{Extensions.ToUnit(this.viewer.Position)}, {this.viewer.Status}");
+            if (propertyName != nameof(SharingViewer.Speed) && (this.viewer.Status & SharingStatus.Completed) == 0)
                 return;
 
-            var count = history.Count;
-            if (count > 1 && history[count - 1].timeSpan - history[count - 2].timeSpan < TimeSpan.FromMilliseconds(33))
-                history.RemoveAt(count - 1);
+            var count = this.history.Count;
+            if (count > 1 && this.history[count - 1].timeSpan - this.history[count - 2].timeSpan < TimeSpan.FromMilliseconds(33))
+                this.history.RemoveAt(count - 1);
             var limits = TimeSpan.FromSeconds(30);
-            var timeSpan = stopwatch.Elapsed;
+            var timeSpan = this.stopwatch.Elapsed;
             var standard = timeSpan - limits;
-            history.Add((timeSpan, viewer.Speed));
-            var first = history.FirstOrDefault(x => x.timeSpan > standard);
-            var index = history.IndexOf(first);
+            this.history.Add((timeSpan, this.viewer.Speed));
+            var first = this.history.FirstOrDefault(x => x.timeSpan > standard);
+            var index = this.history.IndexOf(first);
             if (index > 0)
-                history.RemoveRange(0, index);
-            values.Clear();
+                this.history.RemoveRange(0, index);
+            this.values.Clear();
             var offset = first.timeSpan;
             var total = timeSpan - first.timeSpan;
             if (total > limits)
                 total = limits;
-            foreach (var (span, speed) in history)
-                values.Add((1.0 * (span - first.timeSpan).TotalMilliseconds / total.TotalMilliseconds, speed));
-            UpdateGraphics(values);
+            foreach (var (span, speed) in this.history)
+                this.values.Add((1.0 * (span - first.timeSpan).TotalMilliseconds / total.TotalMilliseconds, speed));
+            this.UpdateGraphics(this.values);
         }
     }
 }

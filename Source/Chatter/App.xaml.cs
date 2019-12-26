@@ -35,7 +35,7 @@ namespace Chatter
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            EventManager.RegisterClassHandler(typeof(TextBox), UIElement.KeyDownEvent, new KeyEventHandler((sender, args) => textboxKeyDown?.Invoke(sender, args)));
+            EventManager.RegisterClassHandler(typeof(TextBox), UIElement.KeyDownEvent, new KeyEventHandler((sender, args) => this.textboxKeyDown?.Invoke(sender, args)));
             DispatcherUnhandledException += (s, e) =>
             {
                 if (e.Exception is Exception exception)
@@ -47,7 +47,7 @@ namespace Chatter
 
         protected override void OnExit(ExitEventArgs e)
         {
-            (client as IDisposable)?.Dispose();
+            (this.client as IDisposable)?.Dispose();
             base.OnExit(e);
         }
     }

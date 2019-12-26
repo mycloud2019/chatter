@@ -6,7 +6,7 @@ namespace Chatter.Controls
     {
         public ProfileElement()
         {
-            InitializeComponent();
+            this.InitializeComponent();
         }
     }
 }

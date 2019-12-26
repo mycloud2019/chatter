@@ -27,7 +27,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <controls:ProfileImage Margin="14,4" MouseLeftButtonDown="UserControl_MouseLeftButtonDown" />
+                <controls:ProfileImage x:Name="profileImage" Margin="14,4" />
             </Grid>
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>

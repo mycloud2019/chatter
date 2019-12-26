@@ -25,8 +25,8 @@ namespace Chatter
 
         public Cover()
         {
-            InitializeComponent();
-            Loaded += Window_Loaded;
+            this.InitializeComponent();
+            Loaded += this.Window_Loaded;
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -49,13 +49,13 @@ namespace Chatter
             this.IsEnabled = false;
             using var _0 = Disposable.Create(() => this.IsEnabled = true);
 
-            client = App.CurrentClient ?? await CreateClient();
-            DataContext = client?.Profile;
+            this.client = App.CurrentClient ?? await CreateClient();
+            this.DataContext = this.client?.Profile;
         }
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            Debug.Assert(client != null);
+            Debug.Assert(this.client != null);
             var button = (Button)e.OriginalSource;
             var tag = button.Tag as string;
 
@@ -65,17 +65,17 @@ namespace Chatter
             if (tag == "go")
             {
                 var isnull = App.CurrentClient is null;
-                App.CurrentClient = client;
-                _ = await TryAsync(() => client.WriteSettingsAsync(SettingsPath)).NoticeOnErrorAsync();
-                if (isnull && (await TryAsync(() => client.StartAsync()).NoticeOnErrorAsync()).IsOk())
+                App.CurrentClient = this.client;
+                _ = await TryAsync(() => this.client.WriteSettingsAsync(SettingsPath)).NoticeOnErrorAsync();
+                if (isnull && (await TryAsync(() => this.client.StartAsync()).NoticeOnErrorAsync()).IsOk())
                     new Entrance().Show();
-                Close();
+                this.Close();
             }
             else if (tag == "image")
             {
                 var dialog = new Microsoft.Win32.OpenFileDialog() { Filter = ImageFileFilter };
                 if (dialog.ShowDialog(this) == true)
-                    _ = await TryAsync(() => client.SetProfileImageAsync(dialog.FileName));
+                    _ = await TryAsync(() => this.client.SetProfileImageAsync(dialog.FileName));
             }
         }
     }

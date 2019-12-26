@@ -26,88 +26,88 @@ namespace Chatter.Windows
 
         public SharingWindow(ISharingObject sharingObject)
         {
-            InitializeComponent();
+            this.InitializeComponent();
 
             var owner = Application.Current.MainWindow;
             Debug.Assert(owner is Entrance);
-            Owner = owner;
+            this.Owner = owner;
 
             var receiver = sharingObject is ISharingReceiver;
             this.sharingObject = sharingObject ?? throw new ArgumentNullException(nameof(sharingObject));
             this.viewer = sharingObject.Viewer;
             if (receiver == false)
-                acceptButton.Visibility = Visibility.Collapsed;
-            sourceTextBlock.Text = receiver ? "Sender" : "Receiver";
-            Title = receiver ? "Receiver" : "Sender";
-            DataContext = this.viewer;
+                this.acceptButton.Visibility = Visibility.Collapsed;
+            this.sourceTextBlock.Text = receiver ? "Sender" : "Receiver";
+            this.Title = receiver ? "Receiver" : "Sender";
+            this.DataContext = this.viewer;
 
-            var handler = new PropertyChangedEventHandler((s, e) => OnUpdate(e.PropertyName));
+            var handler = new PropertyChangedEventHandler((s, e) => this.OnUpdate(e.PropertyName));
             if (receiver)
                 Loaded += (s, _) => NativeMethods.FlashWindow(new WindowInteropHelper((Window)s).Handle, true);
             Closed += (s, _) => (sharingObject as IDisposable)?.Dispose();
-            Loaded += (s, _) => OnUpdate(string.Empty);
-            Loaded += (s, _) => ((INotifyPropertyChanged)viewer).PropertyChanged += handler;
-            Unloaded += (s, _) => ((INotifyPropertyChanged)viewer).PropertyChanged -= handler;
-            SizeChanged += (s, _) => UpdateGraphics(values);
+            Loaded += (s, _) => this.OnUpdate(string.Empty);
+            Loaded += (s, _) => ((INotifyPropertyChanged)this.viewer).PropertyChanged += handler;
+            Unloaded += (s, _) => ((INotifyPropertyChanged)this.viewer).PropertyChanged -= handler;
+            SizeChanged += (s, _) => this.UpdateGraphics(this.values);
         }
 
         private void OnButtonClick(object _, RoutedEventArgs e)
         {
             var button = e.OriginalSource as Button; ;
-            var receiver = sharingObject as ISharingReceiver;
-            if (button == acceptButton)
+            var receiver = this.sharingObject as ISharingReceiver;
+            if (button == this.acceptButton)
             {
                 Debug.Assert(receiver != null);
                 receiver.Accept(true);
                 button.IsEnabled = false;
             }
-            else if (button == cancelButton)
+            else if (button == this.cancelButton)
             {
-                if (receiver != null && viewer.Status == SharingStatus.Pending)
+                if (receiver != null && this.viewer.Status == SharingStatus.Pending)
                     receiver.Accept(false);
                 else
-                    (sharingObject as IDisposable)?.Dispose();
+                    (this.sharingObject as IDisposable)?.Dispose();
             }
-            else if (button == backupButton)
+            else if (button == this.backupButton)
             {
-                Close();
+                this.Close();
             }
         }
 
         protected virtual void OnUpdate(string propertyName)
         {
-            if (propertyName != nameof(SharingViewer.Status) || (viewer.Status & SharingStatus.Completed) == 0)
+            if (propertyName != nameof(SharingViewer.Status) || (this.viewer.Status & SharingStatus.Completed) == 0)
                 return;
             // Change visibility when completed
-            buttonPanel.IsEnabled = false;
-            buttonPanel.Visibility = Visibility.Collapsed;
-            backupPanel.Visibility = Visibility.Visible;
+            this.buttonPanel.IsEnabled = false;
+            this.buttonPanel.Visibility = Visibility.Collapsed;
+            this.backupPanel.Visibility = Visibility.Visible;
         }
 
         protected void UpdateNotice(string text)
         {
-            noticeTextBlock.Text = $"Status: {text}";
+            this.noticeTextBlock.Text = $"Status: {text}";
         }
 
         protected void UpdateGraphics(IList<(double progress, double speed)> values)
         {
-            canvas.ClearVisuals();
+            this.canvas.ClearVisuals();
             this.values = values;
             if (values == null || values.Count == 0)
                 return;
-            var window = canvas.FindAncestor<Window>();
-            var point = canvas.TranslatePoint(new Point(0, 0), window);
+            var window = this.canvas.FindAncestor<Window>();
+            var point = this.canvas.TranslatePoint(new Point(0, 0), window);
             // Align to pixels
             var offset = new Vector(point.X - Math.Truncate(point.X), point.Y - Math.Truncate(point.Y));
-            var width = canvas.ActualWidth;
-            var height = canvas.ActualHeight;
+            var width = this.canvas.ActualWidth;
+            var height = this.canvas.ActualHeight;
             var visual = new DrawingVisual();
             var context = visual.RenderOpen();
 
             var lastValue = values.Last();
-            if (lastValue.speed > maximumSpeed)
-                maximumSpeed = lastValue.speed;
-            var maximum = 1.25 * maximumSpeed;
+            if (lastValue.speed > this.maximumSpeed)
+                this.maximumSpeed = lastValue.speed;
+            var maximum = 1.25 * this.maximumSpeed;
 
             var points = new List<Point>();
             foreach (var (progress, speed) in values)
@@ -126,7 +126,7 @@ namespace Chatter.Windows
                 points.Add(new Point(lastPoint.X, height));
                 geometryContext.PolyLineTo(points, true, true);
             }
-            var status = viewer.Status;
+            var status = this.viewer.Status;
             var color = status == SharingStatus.Success
                 ? Color.FromArgb(192, 32, 192, 0)
                 : status == SharingStatus.Aborted ? Color.FromArgb(192, 220, 20, 60) : Color.FromArgb(192, 58, 110, 165);
@@ -136,14 +136,14 @@ namespace Chatter.Windows
             context.DrawLine(new Pen(Brushes.Black, 1), new Point(0, vertical), new Point(width, vertical));
 
             var text = $"{Extensions.ToUnit((long)values.Last().speed)}/s";
-            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
-            var fontSize = noticeTextBlock.FontSize;
-            var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, fontSize, Foreground, 96.0);
-            var textPoint = new Point(width - formatted.Width - canvasBorder.BorderThickness.Right, vertical > formatted.Height ? vertical - formatted.Height : vertical);
+            var typeface = new Typeface(this.FontFamily, this.FontStyle, this.FontWeight, this.FontStretch);
+            var fontSize = this.noticeTextBlock.FontSize;
+            var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, fontSize, this.Foreground, 96.0);
+            var textPoint = new Point(width - formatted.Width - this.canvasBorder.BorderThickness.Right, vertical > formatted.Height ? vertical - formatted.Height : vertical);
             context.DrawText(formatted, textPoint);
 
             context.Close();
-            canvas.AddVisual(visual);
+            this.canvas.AddVisual(visual);
         }
     }
 }

@@ -9,43 +9,43 @@ namespace Chatter.Controls
     {
         private readonly List<Visual> visuals = new List<Visual>();
 
-        protected override int VisualChildrenCount => visuals.Count;
+        protected override int VisualChildrenCount => this.visuals.Count;
 
-        protected override Visual GetVisualChild(int index) => visuals[index];
+        protected override Visual GetVisualChild(int index) => this.visuals[index];
 
         public void AddVisual(Visual visual)
         {
             if (visual == null)
                 throw new ArgumentNullException(nameof(visual));
-            Dispatcher.VerifyAccess();
+            this.Dispatcher.VerifyAccess();
 
-            if (visuals.Contains(visual))
+            if (this.visuals.Contains(visual))
                 throw new ArgumentException();
-            AddVisualChild(visual);
-            AddLogicalChild(visual);
-            visuals.Add(visual);
+            this.AddVisualChild(visual);
+            this.AddLogicalChild(visual);
+            this.visuals.Add(visual);
         }
 
         public bool RemoveVisual(Visual visual)
         {
             if (visual == null)
                 throw new ArgumentNullException(nameof(visual));
-            Dispatcher.VerifyAccess();
+            this.Dispatcher.VerifyAccess();
 
-            if (!visuals.Remove(visual))
+            if (!this.visuals.Remove(visual))
                 return false;
-            RemoveVisualChild(visual);
-            RemoveLogicalChild(visual);
+            this.RemoveVisualChild(visual);
+            this.RemoveLogicalChild(visual);
             return true;
         }
 
         public void ClearVisuals()
         {
-            Dispatcher.VerifyAccess();
+            this.Dispatcher.VerifyAccess();
 
-            visuals.ForEach(RemoveVisualChild);
-            visuals.ForEach(RemoveLogicalChild);
-            visuals.Clear();
+            this.visuals.ForEach(this.RemoveVisualChild);
+            this.visuals.ForEach(this.RemoveLogicalChild);
+            this.visuals.Clear();
         }
     }
 }
