@@ -1,5 +1,4 @@
-﻿using Mikodev.Links.Internal;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -49,7 +48,7 @@ namespace Mikodev.Links.Messages
 
         public Message(string id)
         {
-            if (id.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(id))
                 throw new InvalidOperationException();
             Id = id;
             Reference = MessageReference.Remote;

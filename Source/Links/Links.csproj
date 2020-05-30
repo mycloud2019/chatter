@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mikodev.Binary" Version="5.0.1" />
+    <PackageReference Include="Mikodev.Binary" Version="5.0.10" />
     <PackageReference Include="Mikodev.Optional" Version="1.1.0" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
-    <PackageReference Include="System.Json" Version="4.7.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
+    <PackageReference Include="System.Json" Version="4.7.1" />
   </ItemGroup>
 
   <ItemGroup>
